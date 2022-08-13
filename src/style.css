@@ -131,6 +131,7 @@ button:focus-visible {
 .editor-page span{
   padding-top: 1px;
   padding-bottom: 1px;
+  line-height: 26px;
   font-family: "Source Code Pro", "Courier New", Consolas, Menlo, "PT Mono", "Liberation Mono", monospace;
   cursor:default;
 }
@@ -139,11 +140,15 @@ button:focus-visible {
   padding-right: 5px;
 }
 
-.editor-line-number span::after{
-  content:"\a";
+.editor-line-number div{
+  padding-top: 1px;
+  padding-bottom: 1px;
+  font-family: "Source Code Pro", "Courier New", Consolas, Menlo, "PT Mono", "Liberation Mono", monospace;
+  cursor:default;
 }
 .editor-hex-area{
-  padding-left: 5px;
+  white-space: pre-wrap;
+  padding-left: 3rem;
 }
 .editor-hex-area span{
   padding-inline-end:5px;
@@ -154,7 +159,7 @@ button:focus-visible {
 }
 
 .editor-text-area{
-  padding-left: 5px;
+  padding-left: 3rem;
   margin-right: 30px;
   white-space: pre-wrap;
 }

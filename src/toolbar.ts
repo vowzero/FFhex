@@ -1,5 +1,5 @@
 function openFile() {
-  console.log('打开文件');
+  document.getElementById('select-file')!.click();
 }
 
 function closeFile() {

@@ -117,17 +117,22 @@ export class App {
     this._TextArea.innerHTML = '';
     // this._Scroll.innerHTML=''; // Scroll needn't adjust
 
+    // calc max line number
+    this.pageMaxLine=Math.floor(this._HexArea.getBoundingClientRect().height/26)
+    this.pageBytesCount=this.pageMaxLine*this.eachLineBytes;
+
+    let aDiv: HTMLDivElement;
     let aSpan: HTMLSpanElement;
     let i: number;
-    let end_addr: number = this.pageMaxLine * this.eachLineBytes;
+    let end_addr: number = this.pageBytesCount;
     let offset: number;
 
     // add line number
     for (i = this.windowOffset; i < end_addr; i += this.eachLineBytes) {
-      aSpan = document.createElement('span');
-      aSpan.dataset['offset'] = i.toString();
-      aSpan.textContent = '';
-      this._LineNumber?.appendChild(aSpan);
+      aDiv = document.createElement('div');
+      aDiv.dataset['offset'] = i.toString();
+      aDiv.textContent = '';
+      this._LineNumber?.appendChild(aDiv);
     }
 
     // MouseEvent: hover byte, selected byte

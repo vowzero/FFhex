@@ -73,8 +73,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <li>123</li>
   </ul>
 </div>
-<input type="file" hidden/>
-
+<input id="select-file" name="select-file" type="file" hidden/>
 `;
 
 App.getInstance();
