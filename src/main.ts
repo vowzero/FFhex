@@ -60,6 +60,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <div class="" data-type="v-float32">00000000</div>
           <div class="" data-type="float64">64bit浮点</div>
           <div class="" data-type="v-float64">00000000</div>
+          <div class="" data-type="ascii">ASCII</div>
+          <div class="" data-type="v-ascii">00000000</div>
+          <div class="" data-type="utf8">UTF-8</div>
+          <div class="" data-type="v-utf8">00000000</div>
         <!--</div>-->
       </div>
     </div>
