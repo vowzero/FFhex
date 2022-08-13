@@ -1,23 +1,43 @@
 import './style.css'
-import typescriptLogo from './typescript.svg'
+import { App } from "./app";
 import { setupCounter } from './counter'
-
+import {setupFileSelector} from './io'
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
+    <input type="file"/>
+    <div class="toolbar">
+      <ul>
+        <li>打开文件</li>
+        <li>关闭文件</li>
+        <li>模板库</li>
+        <li>搜索</li>
+        <li>帮助</li>
+      </ul>
     </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
+    <div class="main-area">
+      <div class="tabs">
+        <a href="javascript:;">Tab1</a>
+        <a href="javascript:;">Tab2</a>
+        <a href="javascript:;">Tab3</a>
+      </div>
+      <div class="hex-editor"></div>
+      <div class="hex-template"></div>
+    </div>
+    <div class="sidebar">
+      <div class="data-viewer"></div>
+    </div>
+    </div>
+    <div class="context-menu">
+      <ul>
+        <li>menu item</li>
+        <li>123</li>
+        <li>123</li>
+        <li>123</li>
+      </ul>
+    </div>
   </div>
 `
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+App.getInstance();
+
+setupFileSelector(document.querySelector<HTMLInputElement>('input')!)
