@@ -1,3 +1,5 @@
+import { BytesFormat } from "./utils";
+
 enum AppStatus {
   LOADED_FILE,
   LOADING_FILE,
@@ -107,6 +109,31 @@ export class App {
       document.onmouseup = () => document.onmousemove = document.onmouseup = null;
     };
   }
+  private updateDataViewer(offset: number){
+    let bytesFormat:BytesFormat;
+    bytesFormat=new BytesFormat(new DataView(this._fileArrayBuffer));
+    bytesFormat.offset=offset;
+    bytesFormat.littleEndian=false;
+    const dataViewerList:string[]=['binary','uint8','int8','uint16','int16','uint32','int32','uint64','int64','float16','float32','float64'];
+    const dataViewerContainer:HTMLElement=document.querySelector<HTMLElement>('.data-viewer .module-content')!;
+    for(let type of dataViewerList){
+      try{
+        dataViewerContainer.querySelector(`[data-type="v-${type}"]`)!.textContent=bytesFormat[type];
+      }catch(e){
+        if(e instanceof RangeError){
+          console.log('遇到文件尾巴');
+        }
+      }
+    }
+  }
+
+  private byteOnclick(event: MouseEvent){
+    let offset = parseInt((event.target as HTMLSpanElement).dataset['offset']!);
+    this.removeByteSpanClass('cursor');
+    this.addByteSpanClass(offset, 'cursor');
+    this.cursorOffset = this.windowOffset + offset;
+    this.updateDataViewer(offset);
+  };
 
   /**
    * adjust editor page viewer elements, clear base element and regenerate them
@@ -136,12 +163,6 @@ export class App {
     }
 
     // MouseEvent: hover byte, selected byte
-    const onSpanClick = (event: MouseEvent) => {
-      offset = parseInt((event.target as HTMLSpanElement).dataset['offset']!);
-      this.removeByteSpanClass('cursor');
-      this.addByteSpanClass(offset, 'cursor');
-      this.cursorOffset = this.windowOffset + offset;
-    };
     const onSpanMouseEnter = (event: MouseEvent) => {
       offset = parseInt((event.target as HTMLSpanElement).dataset['offset']!);
       this.addByteSpanClass(offset, 'hover');
@@ -155,7 +176,7 @@ export class App {
       aSpan = document.createElement('span');
       aSpan.dataset['offset'] = i.toString();
       aSpan.textContent = '';
-      aSpan.onclick = onSpanClick;
+      aSpan.onclick = this.byteOnclick.bind(this);
       aSpan.onmouseenter = onSpanMouseEnter;
       aSpan.onmouseleave = onSpanMouseLeave;
       this._HexArea?.appendChild(aSpan);
@@ -165,7 +186,7 @@ export class App {
       aSpan = document.createElement('span');
       aSpan.dataset['offset'] = i.toString();
       aSpan.textContent = '';
-      aSpan.onclick = onSpanClick;
+      aSpan.onclick = this.byteOnclick.bind(this);
       aSpan.onmouseenter = onSpanMouseEnter;
       aSpan.onmouseleave = onSpanMouseLeave;
       this._TextArea?.appendChild(aSpan);
@@ -183,8 +204,7 @@ export class App {
       aSpan.textContent = (this.windowOffset + offset).toString(16).toUpperCase().padStart(this.offsetAddressMaxLength, '0');
     }
     const bytesCount: number = this.pageMaxLine * this.eachLineBytes;
-    const buffer = this._fileArrayBuffer;
-    const dataview: DataView = new DataView(buffer);
+    const dataview: DataView = new DataView(this._fileArrayBuffer);
 
     // show hex bytes and don't need consider the bytesCount in line
     for (i = 0; i < dataview.byteLength; i++) {
