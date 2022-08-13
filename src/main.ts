@@ -1,7 +1,6 @@
 import './style.css'
 import { App } from "./app";
 import { SVG_openFile,SVG_closeFile,SVG_templateLib,SVG_search,SVG_help, folded, unfolded } from './icon';
-import {setupFileSelector} from './io'
 import { setupToolbar } from './toolbar';
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="editor-container">
@@ -82,5 +81,4 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 App.getInstance();
 
-setupFileSelector(document.querySelector<HTMLInputElement>('input')!)
 setupToolbar(document.querySelector<HTMLElement>('.toolbar')!);

@@ -94,8 +94,14 @@ export class App {
       menu.style.display = 'none';
     };
 
-    this._Scroll.querySelector<HTMLDivElement>('.scroll-up')!.onclick = () => this.seekWindowOffset(this.windowOffset - this.eachLineBytes);;
-    this._Scroll.querySelector<HTMLDivElement>('.scroll-down')!.onclick = () => this.seekWindowOffset(this.windowOffset + this.eachLineBytes);;
+    page.onwheel = (event: WheelEvent) => {
+      let delta = event.deltaY>0?1:-1;
+      // Scroll a quarter of a page at once
+      this.seekWindowOffset(this.windowOffset + delta*this.eachLineBytes* Math.floor(this.pageMaxLine*0.25));
+    };
+
+    this._Scroll.querySelector<HTMLDivElement>('.scroll-up')!.onclick = () => this.seekWindowOffset(this.windowOffset - this.eachLineBytes);
+    this._Scroll.querySelector<HTMLDivElement>('.scroll-down')!.onclick = () => this.seekWindowOffset(this.windowOffset + this.eachLineBytes);
     this._Scroll.querySelector<HTMLDivElement>('.scroll-bar')!.onmousedown = () => {
       document.onmousemove = throttle((event: MouseEvent) => {
         let height: number = this._Scroll.offsetHeight;
@@ -108,6 +114,7 @@ export class App {
       }, 10);
       document.onmouseup = () => document.onmousemove = document.onmouseup = null;
     };
+
   }
   private updateDataViewer(offset: number){
     let bytesFormat:BytesFormat;
@@ -116,12 +123,14 @@ export class App {
     bytesFormat.littleEndian=false;
     const dataViewerList:string[]=['binary','uint8','int8','uint16','int16','uint32','int32','uint64','int64','float16','float32','float64','ascii','utf8'];
     const dataViewerContainer:HTMLElement=document.querySelector<HTMLElement>('.data-viewer .module-content')!;
+    let valueContainer:HTMLElement;
     for(let type of dataViewerList){
+      valueContainer=dataViewerContainer.querySelector(`[data-type="v-${type}"]`)!;
       try{
-        dataViewerContainer.querySelector(`[data-type="v-${type}"]`)!.textContent=bytesFormat[type];
+        valueContainer.textContent=bytesFormat[type];
       }catch(e){
         if(e instanceof RangeError){
-          console.log('遇到文件尾巴');
+          valueContainer.textContent='[end of file]'
         }
       }
     }

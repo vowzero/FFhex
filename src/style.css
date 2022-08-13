@@ -229,6 +229,7 @@ button:focus-visible {
 
 .context-menu ul{
   padding-inline-start: 1em;
+  flex-direction: column;
 }
 
 .context-menu li{
