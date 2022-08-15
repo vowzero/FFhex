@@ -115,6 +115,14 @@ button:focus-visible {
   height:.8rem;
   margin-left: .5rem;
 }
+
+.tab-page,.editor-page.tab-page{
+  display: none;
+}
+.tab-page.active{
+  display:block;
+}
+
 .hex-editor{
   display: flex;
   width: 100%;
@@ -123,11 +131,14 @@ button:focus-visible {
   overflow: hidden;
 }
 
+
 .editor-page{
   display: flex;
   position:relative;
 }
-
+.editor-page.tab-page.active{
+  display: flex;
+}
 .editor-page span{
   padding-top: 1px;
   padding-bottom: 1px;

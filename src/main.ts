@@ -1,7 +1,7 @@
 import './style.css'
-import { App } from "./app";
 import { SVG_openFile,SVG_closeFile,SVG_templateLib,SVG_search,SVG_help, folded, unfolded } from './icon';
 import { setupToolbar } from './toolbar';
+import { setupTab } from './tab';
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="editor-container">
   <div class="main-area">
@@ -14,15 +14,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <li><i>${SVG_help}</i>帮助</li>
       </ul>
     </div>
-    <div class="tabs">
-      <ul>
-        <li class="active"><a href="javascript:;">Tab1</a><a href="javascript:;">${SVG_closeFile}</a></li>
-        <li><a href="javascript:;">Tab2</a></li>
-        <li><a href="javascript:;">Tab3</a></li>
-        <li><a href="javascript:;">Tab4</a></li>
-      </ul>
-    </div>
-    <div class="hex-editor"></div>
+    <div class="tabs"><ul></ul></div>
+    <div class="hex-editor">
+      <div class="tab-page" data-index="0">welcome</div>
+      </div>
     <div class="hex-template"></div>
   </div>
   <div class="sidebar">
@@ -83,6 +78,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <input id="select-file" name="select-file" type="file" hidden/>
 `;
 
-App.getInstance();
 
-setupToolbar(document.querySelector<HTMLElement>('.toolbar')!);
+setupToolbar();
+setupTab();

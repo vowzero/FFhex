@@ -9,23 +9,43 @@ enum AppStatus {
 };
 
 export class App {
-  static instance: App;
+  static pool:App[]=[];
   static pageCount: number;
   static pageIndex: number = 1;
-  static getInstance(): App {
-    if (!App.instance) {
-      App.instance = new App();
+
+  // static switchFile(){}
+
+  static openFile(file:File):App|null{
+    let app:App;
+    if(App.isReopenFile(file)){
+      console.log('Reopen file');
+      return null;
+    }else{
+      app=new App(file);
+      App.pool.push(app);
+      return app;
     }
-    return App.instance;
+  }
+
+  static closeFile(pageID:number){
+    for(let app of App.pool){
+      if(app.pageID==pageID){
+        app.destory();
+      }
+    }
+  }
+
+  private static isReopenFile(file:File):boolean{
+    return false;
   }
 
   public pageID: number;
   public cursorOffset: number | null = null; // The offset of the current cursor relative to the file header
   public windowOffset: number = 0;         // The offset of the first line of the view window relative to the file header
   public dirty: boolean = false;           // Whether it has been modified
-  public pageMaxLine: number = 30;
-  public eachLineBytes: number = 16;
   public pageBytesCount: number = 0;
+  public eachLineBytes: number = 16;
+  public pageMaxLine: number = 30;
   public fileTotalBytes: number = 0;
   public offsetAddressMaxLength: number = 8;
   public scrollRatio: number = 0;
@@ -40,13 +60,24 @@ export class App {
   private _Scroll!: HTMLDivElement;
   private _lastLineAddress: number = 0;
 
-  constructor() {
+  constructor(file:File) {
     App.pageCount++;
     this.pageID = App.pageIndex++;
-    this.initFileReader();
     this.pageBytesCount=this.eachLineBytes*this.pageMaxLine;
+
+    this.initFileReader();
+    this.initEditorPage();
+
+    this._inputFile = file;
+    this.status = AppStatus.LOADING_FILE;
+    this.fileTotalBytes = file.size;
+    this.offsetAddressMaxLength = Math.max(8, Math.ceil(Math.log(file.size) / Math.log(16)));
+    this._lastLineAddress=calcBytesAlign(this.fileTotalBytes,this.eachLineBytes);
+    this.adjustEditorPage();
+    this.seekWindowOffset(0);
   }
 
+  get editorElement(){return this._pageElement;}
   // it will slice the file [windowOffset, windowOffset+bytesCount]
   private seekWindowOffset(windowOffset: number) {
     if (windowOffset > this._lastLineAddress-this.pageBytesCount) {
@@ -282,18 +313,6 @@ export class App {
     })
   }
 
-  set inputFile(file: File) {
-    this.initEditorPage();
-
-    this._inputFile = file;
-    this.status = AppStatus.LOADING_FILE;
-    this.fileTotalBytes = file.size;
-    this.offsetAddressMaxLength = Math.max(8, Math.ceil(Math.log(file.size) / Math.log(16)));
-    this._lastLineAddress=calcBytesAlign(this.fileTotalBytes,this.eachLineBytes);
-    this.adjustEditorPage();
-    this.seekWindowOffset(0);
-    console.log(this);
-  }
 
   private fileReaderOnLoad = (event: ProgressEvent<FileReader>) => {
     if (this._fileReader.readyState == FileReader.DONE) {
@@ -315,14 +334,16 @@ export class App {
     this._fileReader.onload = this.fileReaderOnLoad;
     this._fileReader.onerror = this.fileReaderOnError;
   }
-  public reset() {
+  public save(){}
+  public destory() {
+    if(this.dirty){this.save();}
     this._fileArrayBuffer = null!;
+    this._fileReader = null!;
     this._inputFile = null!;
-    this.status = AppStatus.CLOSE_FILE;
+    this._pageElement.remove();
   }
 }
 
-export const app = App.getInstance();
 
 /**
  * quickly to throttle even in event

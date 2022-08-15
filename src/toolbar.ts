@@ -1,11 +1,12 @@
-import { app } from "./app";
+import { App } from "./app";
+import { newTabButton, newTabContent,tabDestoryCurrent,activeTab } from "./tab";
 
 function openFile() {
   document.getElementById('select-file')!.click();
 }
 
 function closeFile() {
-  console.log('关闭文件');
+  tabDestoryCurrent();
 }
 
 function templateLib() {
@@ -20,6 +21,13 @@ function help() {
   console.log('帮助');
 }
 
+function addFileTab(file:File){
+  let app:App=App.openFile(file)!;
+  newTabButton(app.pageID,file.name,true);
+  newTabContent(app.pageID,app.editorElement);
+  activeTab(app.pageID);
+}
+
 function inputFileOnClick(event:Event){
   const files:FileList=(event.target as HTMLInputElement).files!;
   if(files.length==0){
@@ -28,13 +36,13 @@ function inputFileOnClick(event:Event){
     console.log('Error:More than one file selected');
   }else{
     console.log('Info:Ok, the file \"'+files[0].name+'\" is selected');
-    app.inputFile = files[0];
+    addFileTab(files[0]);
   }
 };
 
 const toolbarClick: any = [openFile, closeFile, templateLib, search, help];
 
-export function setupToolbar(element: HTMLElement) {
-  element.querySelectorAll('li').forEach((e: HTMLLIElement, k: number) => e.onclick = toolbarClick[k]);
+export function setupToolbar() {
+  document.querySelector<HTMLElement>('.toolbar')!.querySelectorAll('li').forEach((e: HTMLLIElement, k: number) => e.onclick = toolbarClick[k]);
   document.querySelector('input')!.addEventListener('change',inputFileOnClick);
 }
