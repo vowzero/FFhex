@@ -121,7 +121,7 @@ export class App {
     bytesFormat=new BytesFormat(new DataView(this._fileArrayBuffer));
     bytesFormat.offset=offset;
     bytesFormat.littleEndian=false;
-    const dataViewerList:string[]=['binary','uint8','int8','uint16','int16','uint32','int32','uint64','int64','float16','float32','float64','ascii','utf8'];
+    const dataViewerList:string[]=['binary','uint8','int8','uint16','int16','uint32','int32','uint64','int64','float16','float32','float64','ascii','utf8','utf16','utf32'];
     const dataViewerContainer:HTMLElement=document.querySelector<HTMLElement>('.data-viewer .module-content')!;
     let valueContainer:HTMLElement;
     for(let type of dataViewerList){

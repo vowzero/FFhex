@@ -60,7 +60,7 @@ export class BytesFormat {
     let e: number = ((bytes[0] & 0x7C) >> 2);
     let x: number = (((bytes[0] & 0x03) << 8) + ((bytes[1] & 0xFF) << 0)) / (Math.pow(2, 10));
     let res: number = Math.pow(-1, s) * (1 + x) * Math.pow(2, e - 15);
-    console.log(s,e,x)
+    console.log(s, e, x)
     return res.toString();
   }
   get float32(): string {
@@ -80,90 +80,133 @@ export class BytesFormat {
     x /= Math.pow(2, 112);
 
     let res: number = Math.pow(-1, s) * ((1 + x) * Math.pow(2, e - 16383));
-    console.log(s,e,x,1+x);
+    console.log(s, e, x, 1 + x);
     return res.toString();
   }
-  get ascii():string{
-    let code=this._dataview.getUint8(this._offset);
-    if(code >= 32 && code <= 126) return String.fromCharCode(code);
-    switch(code){
-      default:return '[unknown ascii code]';
-      case 0x00:return '[NUL]';
-      case 0x01:return '[SOH]';
-      case 0x02:return '[STX]';
-      case 0x03:return '[ETX]';
-      case 0x04:return '[EOT]';
-      case 0x05:return '[ENQ]';
-      case 0x06:return '[ACK]';
-      case 0x07:return '[BEL]';
-      case 0x08:return '[BS]';
-      case 0x09:return '[HT]';
-      case 0x0A:return '[LF]';
-      case 0x0B:return '[VT]';
-      case 0x0C:return '[FF]';
-      case 0x0D:return '[CR]';
-      case 0x0E:return '[SO]';
-      case 0x0F:return '[SI]';
-      case 0x10:return '[DLE]';
-      case 0x11:return '[DC1]';
-      case 0x12:return '[DC2]';
-      case 0x13:return '[DC3]';
-      case 0x14:return '[DC4]';
-      case 0x15:return '[NAK]';
-      case 0x16:return '[SYN]';
-      case 0x17:return '[ETB]';
-      case 0x18:return '[CAN]';
-      case 0x19:return '[EM]';
-      case 0x1A:return '[SUB]';
-      case 0x1B:return '[ESC]';
-      case 0x1C:return '[FS]';
-      case 0x1D:return '[GS]';
-      case 0x1E:return '[RS]';
-      case 0x1F:return '[US]';
-      case 0x20:return '[SPACE]';
-      case 0XFF:return '[DEL]';
+  get ascii(): string {
+    let code = this._dataview.getUint8(this._offset);
+    if (code >= 32 && code <= 126) return String.fromCharCode(code);
+    switch (code) {
+      default: return '[unknown ascii code]';
+      case 0x00: return '[NUL]';
+      case 0x01: return '[SOH]';
+      case 0x02: return '[STX]';
+      case 0x03: return '[ETX]';
+      case 0x04: return '[EOT]';
+      case 0x05: return '[ENQ]';
+      case 0x06: return '[ACK]';
+      case 0x07: return '[BEL]';
+      case 0x08: return '[BS]';
+      case 0x09: return '[HT]';
+      case 0x0A: return '[LF]';
+      case 0x0B: return '[VT]';
+      case 0x0C: return '[FF]';
+      case 0x0D: return '[CR]';
+      case 0x0E: return '[SO]';
+      case 0x0F: return '[SI]';
+      case 0x10: return '[DLE]';
+      case 0x11: return '[DC1]';
+      case 0x12: return '[DC2]';
+      case 0x13: return '[DC3]';
+      case 0x14: return '[DC4]';
+      case 0x15: return '[NAK]';
+      case 0x16: return '[SYN]';
+      case 0x17: return '[ETB]';
+      case 0x18: return '[CAN]';
+      case 0x19: return '[EM]';
+      case 0x1A: return '[SUB]';
+      case 0x1B: return '[ESC]';
+      case 0x1C: return '[FS]';
+      case 0x1D: return '[GS]';
+      case 0x1E: return '[RS]';
+      case 0x1F: return '[US]';
+      case 0x20: return '[SPACE]';
+      case 0XFF: return '[DEL]';
     }
   }
-  get utf8(){
-    let bytes:number[];
-    let unicode:number=0;
-    let firstByte=this._dataview.getUint8(this._offset);
+  get utf8(): string {
+    let bytes: number[];
+    let unicode: number = 0;
+    let firstByte = this._dataview.getUint8(this._offset);
 
-    this.littleEndian=false;
-    if((firstByte&0xFC)===0xFC){ // 6bytes
-      bytes=this.getBytes(6);
-      unicode+=(bytes[0]&0x01)<<30;
-      unicode+=(bytes[1]&0x3F)<<24;
-      unicode+=(bytes[2]&0x3F)<<18;
-      unicode+=(bytes[3]&0x3F)<<12;
-      unicode+=(bytes[4]&0x3F)<<6;
-      unicode+=(bytes[5]&0x3F)<<0;
-    }else if((firstByte&0xF8)===0xF8){ // 5bytes
-      bytes=this.getBytes(5);
-      unicode+=(bytes[0]&0x03)<<24;
-      unicode+=(bytes[1]&0x3F)<<18;
-      unicode+=(bytes[2]&0x3F)<<12;
-      unicode+=(bytes[3]&0x3F)<<6;
-      unicode+=(bytes[4]&0x3F)<<0;
-    }else if((firstByte&0xF0)===0xF0){ // 4bytes
-      bytes=this.getBytes(4);
-      unicode+=(bytes[0]&0x07)<<18;
-      unicode+=(bytes[1]&0x3F)<<12;
-      unicode+=(bytes[2]&0x3F)<<6;
-      unicode+=(bytes[3]&0x3F)<<0;
-    }else if((firstByte&0xE0)===0xE0){ // 3bytes
-      bytes=this.getBytes(3);
-      unicode+=(bytes[0]&0x0F)<<12;
-      unicode+=(bytes[1]&0x3F)<<6;
-      unicode+=(bytes[2]&0x3F)<<0;
-      console.log(bytes[0]&0x0F<<0,bytes[1]&0x3F<<0,bytes[2]&0x3F<<0);
-    }else if((firstByte&0xC0)===0xC0){ // 2 bytes
-      bytes=this.getBytes(2);
-      unicode+=(bytes[0]&0x1F)<<6;
-      unicode+=(bytes[1]&0x3F)<<0;
-    }else if((firstByte&0x80)===0){ // 1 byte
+    this.littleEndian = false;
+    if ((firstByte & 0xFC) === 0xFC) { // 6bytes
+      bytes = this.getBytes(6);
+      unicode += (bytes[0] & 0x01) << 30;
+      unicode += (bytes[1] & 0x3F) << 24;
+      unicode += (bytes[2] & 0x3F) << 18;
+      unicode += (bytes[3] & 0x3F) << 12;
+      unicode += (bytes[4] & 0x3F) << 6;
+      unicode += (bytes[5] & 0x3F) << 0;
+    } else if ((firstByte & 0xF8) === 0xF8) { // 5bytes
+      bytes = this.getBytes(5);
+      unicode += (bytes[0] & 0x03) << 24;
+      unicode += (bytes[1] & 0x3F) << 18;
+      unicode += (bytes[2] & 0x3F) << 12;
+      unicode += (bytes[3] & 0x3F) << 6;
+      unicode += (bytes[4] & 0x3F) << 0;
+    } else if ((firstByte & 0xF0) === 0xF0) { // 4bytes
+      bytes = this.getBytes(4);
+      unicode += (bytes[0] & 0x07) << 18;
+      unicode += (bytes[1] & 0x3F) << 12;
+      unicode += (bytes[2] & 0x3F) << 6;
+      unicode += (bytes[3] & 0x3F) << 0;
+    } else if ((firstByte & 0xE0) === 0xE0) { // 3bytes
+      bytes = this.getBytes(3);
+      unicode += (bytes[0] & 0x0F) << 12;
+      unicode += (bytes[1] & 0x3F) << 6;
+      unicode += (bytes[2] & 0x3F) << 0;
+      console.log(bytes[0] & 0x0F << 0, bytes[1] & 0x3F << 0, bytes[2] & 0x3F << 0);
+    } else if ((firstByte & 0xC0) === 0xC0) { // 2 bytes
+      bytes = this.getBytes(2);
+      unicode += (bytes[0] & 0x1F) << 6;
+      unicode += (bytes[1] & 0x3F) << 0;
+    } else if ((firstByte & 0x80) === 0) { // 1 byte
       return this.ascii;
     }
+    return String.fromCharCode(unicode);
+  }
+  get utf16(): string {
+    let bytes: number[];
+    let unit: number;
+    let unicode: number = 0;
+    let firstByte = this._dataview.getUint8(this._offset);
+    let secondByte = this._dataview.getUint16(this._offset + 1);
+    if (firstByte == 0xFE && secondByte == 0xFF) { // BOM BE
+      this.littleEndian = false;
+      this._offset += 2;
+    } else if (secondByte == 0xFE && firstByte == 0xFF) { // BOM LE
+      this.littleEndian = true;
+      this._offset += 2;
+    }
+    bytes = this.getBytes(2);
+    unit = (bytes[0] << 8) + bytes[1];
+    if (unit < 0xD800 || unit > 0xDFFF) {
+      unicode = unit;
+    } else {
+      unicode += (unit - 0xD800) << 10;
+      this._offset += 2;
+      bytes = this.getBytes(2);
+      unit = (bytes[0] << 8) + bytes[1];
+      unicode += (unit - 0xDC00);
+      unicode += 0x10000;
+    }
+    return String.fromCharCode(unicode);
+  }
+  get utf32(): string {
+    let bytes: number[];
+    let unicode: number = 0;
+    bytes = this.getBytes(4);
+    if (bytes[2] == 0xFE && bytes[3] == 0xFF) { // BOM BE
+      this.littleEndian = false;
+      this._offset += 4;
+      bytes = this.getBytes(4);
+    } else if (bytes[1] == 0xFE && bytes[0] == 0xFF) { // BOM LE
+      this.littleEndian = true;
+      this._offset += 4;
+      bytes = this.getBytes(4);
+    }
+    unicode += (bytes[0]<<24)+(bytes[1]<<16)+(bytes[2]<<8)+(bytes[3]<<0);
     return String.fromCharCode(unicode);
   }
 }

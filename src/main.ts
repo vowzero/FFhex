@@ -63,6 +63,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <div class="" data-type="v-ascii">00000000</div>
           <div class="" data-type="utf8">UTF-8</div>
           <div class="" data-type="v-utf8">00000000</div>
+          <div class="" data-type="utf16">UTF-16</div>
+          <div class="" data-type="v-utf16">00000000</div>
+          <div class="" data-type="utf32">UTF-32</div>
+          <div class="" data-type="v-utf32">00000000</div>
         <!--</div>-->
       </div>
     </div>
