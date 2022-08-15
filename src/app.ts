@@ -362,3 +362,4 @@ function throttle(this: any, func: any, timeout: number) {
 function calcBytesAlign(bytes:number,radix:number):number{
   return Math.floor((Math.floor(bytes) + radix - 1) / radix) * radix;
 }
+
