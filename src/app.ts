@@ -1,3 +1,4 @@
+import { updateDataViewer } from "./dataviewer";
 import { BytesFormat } from "./utils";
 
 enum AppStatus {
@@ -147,32 +148,14 @@ export class App {
     };
 
   }
-  private updateDataViewer(offset: number){
-    let bytesFormat:BytesFormat;
-    bytesFormat=new BytesFormat(new DataView(this._fileArrayBuffer));
-    bytesFormat.offset=offset;
-    bytesFormat.littleEndian=false;
-    const dataViewerList:string[]=['binary','uint8','int8','uint16','int16','uint32','int32','uint64','int64','float16','float32','float64','ascii','utf8','utf16','utf32'];
-    const dataViewerContainer:HTMLElement=document.querySelector<HTMLElement>('.data-viewer .module-content')!;
-    let valueContainer:HTMLElement;
-    for(let type of dataViewerList){
-      valueContainer=dataViewerContainer.querySelector(`[data-type="v-${type}"]`)!;
-      try{
-        valueContainer.textContent=bytesFormat[type];
-      }catch(e){
-        if(e instanceof RangeError){
-          valueContainer.textContent='[end of file]'
-        }
-      }
-    }
-  }
+
 
   private byteOnclick(event: MouseEvent){
     let offset = parseInt((event.target as HTMLSpanElement).dataset['offset']!);
     this.removeByteSpanClass('cursor');
     this.addByteSpanClass(offset, 'cursor');
     this.cursorOffset = this.windowOffset + offset;
-    this.updateDataViewer(offset);
+    updateDataViewer(offset,this._fileArrayBuffer);
   };
 
   /**
@@ -312,7 +295,6 @@ export class App {
       if (aSpan.parentElement !== this._LineNumber) aSpan.classList.add(classname);
     })
   }
-
 
   private fileReaderOnLoad = (event: ProgressEvent<FileReader>) => {
     if (this._fileReader.readyState == FileReader.DONE) {

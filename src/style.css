@@ -254,3 +254,8 @@ button:focus-visible {
   display: grid;
   grid-template-columns: 40% 60%;
 }
+
+.endian-select{
+  display: inline-block;
+  margin-left: 2rem;
+}
