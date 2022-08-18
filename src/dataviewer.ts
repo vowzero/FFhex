@@ -12,7 +12,7 @@ const template = `
       <label>大端序</label>
       <input class="endian-radio" name="dataviewer-endian" type="radio" value="le" />
       <label>小端序</label>
-      </div>
+    </div>
   </div>
   <div class="module-content grid">
     <!--<div class="grid-row">-->

@@ -1,3 +1,5 @@
+import { BoyerMooreBytes } from "./StringMatch/Boyer-Moore";
+
 export class BytesFormat {
   [props: string]: any;
   private _offset: number = 0;
@@ -206,8 +208,20 @@ export class BytesFormat {
       this._offset += 4;
       bytes = this.getBytes(4);
     }
-    unicode += (bytes[0]<<24)+(bytes[1]<<16)+(bytes[2]<<8)+(bytes[3]<<0);
+    unicode += (bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + (bytes[3] << 0);
     return String.fromCharCode(unicode);
   }
 }
 
+export class ByteArray implements BoyerMooreBytes{
+  private bytes: Uint8Array;
+  constructor(arrbuf: ArrayBuffer) {
+    this.bytes = new Uint8Array(arrbuf);
+  }
+
+  get length(): number { return this.bytes.length; }
+
+  public at(index: number) {
+    return this.bytes.at(index);
+  }
+}

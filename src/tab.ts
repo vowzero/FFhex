@@ -62,11 +62,12 @@ export function activeTab(index:number){
   tabsElement.querySelector(`[data-index="${index}"]`)?.classList.add('active');
   tabsContent.querySelectorAll(`.active`).forEach((e:Element)=>e.classList.remove('active'));
   tabsContent.querySelector(`[data-index="${index}"]`)?.classList.add('active');
+  App.switchFile(index);
 }
 
 export function setupTab(){
   tabsElement=document.querySelector('.tabs ul')!;
-  tabsContent=document.querySelector('.hex-editor')!;
+  tabsContent=document.querySelector('.tab-contents')!;
   activeIndex=0;
   tabIDs=[];
   newTabButton(0,'欢迎页',false);

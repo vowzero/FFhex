@@ -1,8 +1,9 @@
 import './style.css'
-import { SVG_openFile,SVG_closeFile,SVG_templateLib,SVG_search,SVG_help, folded, unfolded } from './icon';
+import { SVG_openFile,SVG_closeFile,SVG_templateLib,SVG_search,SVG_help } from './icon';
 import { setupToolbar } from './toolbar';
 import { setupTab } from './tab';
 import { setupDataViewer } from './dataviewer';
+import { setupSearch } from './search';
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="editor-container">
   <div class="main-area">
@@ -17,8 +18,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     </div>
     <div class="tabs"><ul></ul></div>
     <div class="hex-editor">
-      <div class="tab-page" data-index="0">welcome</div>
+      <div class="tab-contents">
+        <div class="tab-page" data-index="0">welcome</div>
       </div>
+      <div class="minor-sidebar">123</div>
+    </div>
     <div class="hex-template"></div>
   </div>
   <div class="sidebar"></div>
@@ -34,7 +38,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <input id="select-file" name="select-file" type="file" hidden/>
 `;
 
-
+console.log("====debug:init====");
 setupToolbar();
 setupTab();
 setupDataViewer();
+setupSearch();

@@ -1,5 +1,4 @@
 import { updateDataViewer } from "./dataviewer";
-import { BytesFormat } from "./utils";
 
 enum AppStatus {
   LOADED_FILE,
@@ -13,8 +12,16 @@ export class App {
   static pool:App[]=[];
   static pageCount: number;
   static pageIndex: number = 1;
+  static currentPage:App;
 
-  // static switchFile(){}
+  static switchFile(pageID:number){
+    for(let app of App.pool){
+      if(app.pageID==pageID){
+        App.currentPage=app;
+        break;
+      }
+    }
+  }
 
   static openFile(file:File):App|null{
     let app:App;
@@ -32,12 +39,13 @@ export class App {
     for(let app of App.pool){
       if(app.pageID==pageID){
         app.destory();
+        break;
       }
     }
   }
 
   private static isReopenFile(file:File):boolean{
-    return false;
+    return false||file===null;
   }
 
   public pageID: number;
@@ -60,13 +68,14 @@ export class App {
   private _TextArea!: HTMLDivElement;
   private _Scroll!: HTMLDivElement;
   private _lastLineAddress: number = 0;
+  private _readPromise!:Promise<FileReader>;
 
   constructor(file:File) {
     App.pageCount++;
     this.pageID = App.pageIndex++;
     this.pageBytesCount=this.eachLineBytes*this.pageMaxLine;
 
-    this.initFileReader();
+    this._fileReader = new FileReader();
     this.initEditorPage();
 
     this._inputFile = file;
@@ -76,9 +85,21 @@ export class App {
     this._lastLineAddress=calcBytesAlign(this.fileTotalBytes,this.eachLineBytes);
     this.adjustEditorPage();
     this.seekWindowOffset(0);
+    console.log(this.status);
   }
 
   get editorElement(){return this._pageElement;}
+
+  public readFile(offset:number,length:number):Promise<FileReader>{
+    let slice:Blob=this._inputFile.slice(offset, offset + length)
+    this._readPromise= new Promise<FileReader>((resolve, reject) => {
+      this._fileReader.onload=()=>resolve(this._fileReader);
+      this._fileReader.onerror=reject;
+      this._fileReader.readAsArrayBuffer(slice);
+    });
+    return this._readPromise;
+  }
+
   // it will slice the file [windowOffset, windowOffset+bytesCount]
   private seekWindowOffset(windowOffset: number) {
     if (windowOffset > this._lastLineAddress-this.pageBytesCount) {
@@ -86,10 +107,12 @@ export class App {
     }
     windowOffset=windowOffset>0?windowOffset:0;
     this.windowOffset = windowOffset;
-    let sliceFile: Blob = this._inputFile.slice(windowOffset, windowOffset + this.pageBytesCount);
-    this._fileReader.readAsArrayBuffer(sliceFile);
+    this.readFile(windowOffset,this.pageBytesCount).then(()=>{
+      this._fileArrayBuffer = this._fileReader.result as ArrayBuffer;
+      this.updateEditorPage();
+      this.updateScrollPosition(windowOffset/this.fileTotalBytes);
+    });
 
-    this.updateScrollPosition(windowOffset/this.fileTotalBytes);
   }
 
   private initEditorPage() {
@@ -106,7 +129,7 @@ export class App {
         <div class="scroll-down"></div>
       </div>
     `;
-    document.querySelector<HTMLDivElement>('.hex-editor')?.appendChild(page);
+    document.querySelector<HTMLDivElement>('.tab-contents')?.appendChild(page);
     this._LineNumber = page.querySelector('.editor-line-number')!;
     this._HexArea = page.querySelector('.editor-hex-area')!;
     this._TextArea = page.querySelector('.editor-text-area')!;
@@ -121,7 +144,7 @@ export class App {
       return false;
     };
 
-    page.onclick = (event: MouseEvent) => {
+    page.onclick = () => {
       const menu = document.querySelector<HTMLDivElement>('.context-menu')!;
       menu.style.display = 'none';
     };
@@ -148,7 +171,6 @@ export class App {
     };
 
   }
-
 
   private byteOnclick(event: MouseEvent){
     let offset = parseInt((event.target as HTMLSpanElement).dataset['offset']!);
@@ -190,7 +212,7 @@ export class App {
       offset = parseInt((event.target as HTMLSpanElement).dataset['offset']!);
       this.addByteSpanClass(offset, 'hover');
     };
-    const onSpanMouseLeave = (event: MouseEvent) => {
+    const onSpanMouseLeave = () => {
       this.removeByteSpanClass('hover');
     };
 
@@ -296,26 +318,6 @@ export class App {
     })
   }
 
-  private fileReaderOnLoad = (event: ProgressEvent<FileReader>) => {
-    if (this._fileReader.readyState == FileReader.DONE) {
-      console.log('file is loaded');
-      this.status = AppStatus.LOADED_FILE;
-      this._fileArrayBuffer = this._fileReader.result as ArrayBuffer;
-      this.updateEditorPage();
-    } else if (this._fileReader.readyState == FileReader.LOADING) {
-      console.log('file is loading');
-      this.status = AppStatus.LOADING_FILE;
-    }
-  }
-
-  private fileReaderOnError = (event: ProgressEvent<FileReader>) => {
-    console.log('Error:FileReader an error occurred.', event.target!.error!.message);
-  };
-  private initFileReader() {
-    this._fileReader = new FileReader();
-    this._fileReader.onload = this.fileReaderOnLoad;
-    this._fileReader.onerror = this.fileReaderOnError;
-  }
   public save(){}
   public destory() {
     if(this.dirty){this.save();}
