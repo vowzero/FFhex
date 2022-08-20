@@ -1,5 +1,4 @@
-import { updateDataViewer } from "./dataviewer";
-import { scrollHighlight } from "./search";
+import { App } from "./app";
 import { calcBytesAlign, throttle } from "./utils";
 
 export interface FileReadResult {
@@ -53,6 +52,10 @@ export class FilePage {
     });
   }
 
+  get currentFile():File{
+    return this._inputFile;
+  }
+
   // it will slice the file [windowOffset, windowOffset+bytesCount]
   private seekWindowOffset(windowOffset: number) {
     if (windowOffset > this._lastLineAddress - this.pageBytesCount) {
@@ -64,7 +67,7 @@ export class FilePage {
       this._fileArrayBuffer = res.result as ArrayBuffer;
       this.updateEditorPage();
       this.updateScrollPosition(windowOffset / this.fileTotalBytes);
-      scrollHighlight();
+      App.hookCall('afterWindowSeek',this._fileArrayBuffer);
     });
 
   }
@@ -131,7 +134,7 @@ export class FilePage {
     this.removeByteSpanClass('cursor');
     this.addByteSpanClass(offset, 'cursor');
     this.cursorOffset = this.windowOffset + offset;
-    updateDataViewer(offset, this._fileArrayBuffer);
+    App.hookCall('afterByteClick',this,offset,this._fileArrayBuffer);
   };
 
   /**

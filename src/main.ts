@@ -4,6 +4,7 @@ import { setupToolbar } from './toolbar';
 import { setupTab } from './tab';
 import { setupDataViewer } from './dataviewer';
 import { setupSearch } from './search';
+import { App } from './app';
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="editor-container">
   <div class="main-area">
@@ -38,8 +39,12 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <input id="select-file" name="select-file" type="file" hidden/>
 `;
 
-console.log("====debug:init====");
-setupToolbar();
-setupTab();
-setupDataViewer();
-setupSearch();
+App.hookRegister('init',()=>{
+  console.log("====debug:init====");
+  setupToolbar();
+  setupTab();
+  setupDataViewer();
+  setupSearch();
+})
+
+App.init();

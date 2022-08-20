@@ -49,6 +49,11 @@ interface SearchResultItem {
   type: string;
 }
 
+interface SearchResult{
+  fileID:number;
+  results:SearchResultItem[];
+}
+
 interface OffsetArea {
   lower: number;
   upper: number;
@@ -56,8 +61,9 @@ interface OffsetArea {
 
 let searchElement: HTMLElement;
 let searchValue: HTMLInputElement;
-let searchResults: Array<SearchResultItem> = new Array();
 let searchConfig: SearchConfig;
+let searchResults: SearchResult[]=[];
+let currentSearchResult:SearchResult;
 
 function closeHighlight() {
   document.querySelectorAll('span.highlight').forEach(span => span.classList.remove('highlight'));
@@ -67,7 +73,7 @@ function openHighlight() {
   const hexArea: HTMLElement = document.querySelector('.editor-hex-area')!;
   const region: OffsetArea = { lower: App.currentPage!.windowOffset, upper: App.currentPage!.windowOffset + App.currentPage!.pageBytesCount };
   let windowOffset: number;
-  searchResults.forEach(({ offset, length }) => {
+  currentSearchResult.results.forEach(({ offset, length }) => {
     if (region.lower <= offset) {
       for (let i = 0; i < length; ++i) {
         if (offset + i < region.upper) {
@@ -80,18 +86,20 @@ function openHighlight() {
 
 }
 
-export function scrollHighlight() {
+function updateHighlight() {
   closeHighlight();
   console.log(1);
   if (searchResults !== null && searchResults.length > 0) {
     openHighlight();
   }
 }
-function searchToggleHightlight() {
-  if (searchConfig.hightlight === true) closeHighlight(); else openHighlight();
+
+function searchNew(){
+  
 }
 
 function searchNext() {
+  const searchRes=currentSearchResult.results;
   let startOffset: number;
   let endOffset: number;
   let byteArray: ByteArray;
@@ -109,13 +117,14 @@ function searchNext() {
   a.setUint8(3, 0x44);
 
   let pattern: ByteArray = b;
-  searchResults = new Array<SearchResultItem>();
+
+  searchRes.splice(0,searchRes.length);
 
   const saveSearchResult = (frr:FileReadResult) => {
     console.log("cur:"+(++currentProgress)+", total:"+totalProgress);
     byteArray = new ByteArray(frr.result as ArrayBuffer);
     res = boyerMoore(byteArray, b);
-    res.forEach((offset: number) => searchResults.push({ offset: offset+frr.offset, length: pattern.length, type: 'uint8' }));
+    res.forEach((offset: number) => searchRes.push({ offset: offset+frr.offset, length: pattern.length, type: 'uint8' }));
   };
 
   const searchList:Array<number>=new Array();
@@ -136,9 +145,22 @@ function searchNext() {
   });
 }
 
+function selectFilePage(file:FilePage){
+  const element:HTMLElement=searchElement.querySelector('button')!
+  element.dataset['file']=file===null?'0':file.fileID.toString();
+  currentSearchResult=searchResults.find(sr=>sr.fileID===file.fileID)!;
+}
+
+function initSearchResult(file:FilePage){
+  searchResults.push({fileID:file.fileID,results:[]});
+}
+
 export function setupSearch() {
   document.querySelector('.minor-sidebar')!.innerHTML = template;
   searchElement = document.querySelector('.search')!;
   searchElement.querySelector('button')!.onclick = searchNext;
   searchValue = searchElement.querySelector('[name="search"]')!;
+  App.hookRegister('afterWindowSeek',updateHighlight);
+  App.hookRegister('afterSwitchPage',selectFilePage);
+  App.hookRegister('afterOpenFile',initSearchResult);
 }

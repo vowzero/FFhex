@@ -1,3 +1,4 @@
+import { App } from "./app";
 import { folded } from "./icon";
 import { BytesFormat } from "./utils";
 
@@ -60,7 +61,7 @@ let dataViewerElement: HTMLElement;
 let lastOffset: number|null=null;
 let lastBuffer:ArrayBuffer|null;
 
-export function updateDataViewer(offset: number, buffer: ArrayBuffer) {
+function updateDataViewer(_file:any,offset: number, buffer: ArrayBuffer) {
   let bytesFormat: BytesFormat = new BytesFormat(new DataView(buffer));
   bytesFormat.offset = offset;
   bytesFormat.littleEndian = littleEndian;
@@ -89,9 +90,9 @@ export function setupDataViewer() {
   dataViewerElement.querySelectorAll('[name="dataviewer-endian"]').forEach((e) => (e as HTMLInputElement).onclick = () => {
     littleEndian = (e as HTMLInputElement).value == 'be' ? false : true;
     if(lastOffset!==null){
-      updateDataViewer(lastOffset, lastBuffer!);
+      updateDataViewer(null,lastOffset, lastBuffer!);
     }
   });
-
+  App.hookRegister('afterByteClick',updateDataViewer);
 }
 
