@@ -1,5 +1,23 @@
 import { BoyerMooreBytes } from "./StringMatch/Boyer-Moore";
 
+/**
+ * quickly to throttle even in event
+ */
+export function throttle(this: any, func: any, timeout: number) {
+  let timer: number | null = null;
+  return (...args: any) => {
+    if (timer) return;
+    timer = setTimeout(() => {
+      func.apply(this, args);
+      timer = null;
+    }, timeout);
+  }
+}
+
+export function calcBytesAlign(bytes: number, radix: number): number {
+  return Math.floor((Math.floor(bytes) + radix - 1) / radix) * radix;
+}
+
 export class BytesFormat {
   [props: string]: any;
   private _offset: number = 0;

@@ -1,9 +1,10 @@
 import { App } from "./app";
+import { FilePage, FileReadResult } from "./filepage";
 import { folded } from "./icon";
 import { boyerMoore } from "./StringMatch/Boyer-Moore";
 import { ByteArray } from "./utils";
 
-const template=`
+const template = `
 <div class="search module-container">
   <div class="module-title">
     <i>${folded}</i>
@@ -38,41 +39,106 @@ const template=`
 </div>
 `;
 
-interface searchResultItem{
-  offset:number;
-  length:number;
-  type:string;
+interface SearchConfig {
+  hightlight: boolean;
+};
+
+interface SearchResultItem {
+  offset: number;
+  length: number;
+  type: string;
 }
 
-let searchElement: HTMLElement;
-let searchResults=[];
+interface OffsetArea {
+  lower: number;
+  upper: number;
+};
 
-function searchNext(){
-  let startOffset: number = 0;
-  let endOffset: number = 500;
-  let byteArray:ByteArray;
-  let res:Array<number>;
-  // 4a 46 49 46
-  App.currentPage.readFile(startOffset,endOffset).then((fr:FileReader)=>{
-    byteArray=new ByteArray(fr.result as ArrayBuffer);
-    let x=new ArrayBuffer(4);
-    let a=new DataView(x);
-    let b=new ByteArray(x);
-    a.setUint8(0,0x00);
-    a.setUint8(1,0x00);
-    a.setUint8(2,0x00);
-    a.setUint8(3,0x00);
-    res=boyerMoore(byteArray,b);
-    console.log(b.at(0),byteArray.at(24));
-    console.log(res);
+let searchElement: HTMLElement;
+let searchValue: HTMLInputElement;
+let searchResults: Array<SearchResultItem> = new Array();
+let searchConfig: SearchConfig;
+
+function closeHighlight() {
+  document.querySelectorAll('span.highlight').forEach(span => span.classList.remove('highlight'));
+}
+
+function openHighlight() {
+  const hexArea: HTMLElement = document.querySelector('.editor-hex-area')!;
+  const region: OffsetArea = { lower: App.currentPage!.windowOffset, upper: App.currentPage!.windowOffset + App.currentPage!.pageBytesCount };
+  let windowOffset: number;
+  searchResults.forEach(({ offset, length }) => {
+    if (region.lower <= offset) {
+      for (let i = 0; i < length; ++i) {
+        if (offset + i < region.upper) {
+          windowOffset = offset + i - App.currentPage!.windowOffset;
+          hexArea.children[windowOffset].classList.add('highlight');
+        }
+      }
+    }
+  });
+
+}
+
+export function scrollHighlight() {
+  closeHighlight();
+  console.log(1);
+  if (searchResults !== null && searchResults.length > 0) {
+    openHighlight();
+  }
+}
+function searchToggleHightlight() {
+  if (searchConfig.hightlight === true) closeHighlight(); else openHighlight();
+}
+
+function searchNext() {
+  let startOffset: number;
+  let endOffset: number;
+  let byteArray: ByteArray;
+  let res: Array<number>;
+  let searchContent = searchValue.value;
+  let currentProgress:number;
+  let totalProgress:number;
+  let x = new ArrayBuffer(4);
+  let a = new DataView(x);
+  let b = new ByteArray(x);
+  const app:FilePage=App.currentPage!;
+  a.setUint8(0, 0x44);
+  a.setUint8(1, 0x44);
+  a.setUint8(2, 0x44);
+  a.setUint8(3, 0x44);
+
+  let pattern: ByteArray = b;
+  searchResults = new Array<SearchResultItem>();
+
+  const saveSearchResult = (frr:FileReadResult) => {
+    console.log("cur:"+(++currentProgress)+", total:"+totalProgress);
+    byteArray = new ByteArray(frr.result as ArrayBuffer);
+    res = boyerMoore(byteArray, b);
+    res.forEach((offset: number) => searchResults.push({ offset: offset+frr.offset, length: pattern.length, type: 'uint8' }));
+  };
+
+  const searchList:Array<number>=new Array();
+  const bytesEachWindow = app.pageBytesCount*1000;
+  const eachLength:number=bytesEachWindow+pattern.length-1;
+  for (startOffset = 0, endOffset = bytesEachWindow - 1; endOffset < app.fileTotalBytes; startOffset += bytesEachWindow, endOffset += bytesEachWindow) {
+    searchList.push(startOffset);
+  }
+  currentProgress=0;
+  totalProgress=searchList.length;
+  let pre=Promise.resolve();
+  searchList.forEach((curOffset,index)=>{
+    pre= pre.then(()=>app.readFile(curOffset, eachLength).then(saveSearchResult));
+  });
+  pre.then(()=>{
+    console.log(searchResults);
+    openHighlight();
   });
 }
 
-export function setupSearch(){
-  // let a=boyerMoore([1,1,1,1,1],[1,1,1]);
-  // let a=boyerMoore([2,2,3,0,1,2,1,2,3,4,1,2,4,3,4,1,2,0,1,2,3,4,1,2,3,4,1,2,4,5],[1,2,3,4,1,2,4]);
-  // console.log(a);
-  document.querySelector('.minor-sidebar')!.innerHTML=template;
-  searchElement=document.querySelector('.search')!;
-  searchElement.querySelector('button')!.onclick=searchNext;
+export function setupSearch() {
+  document.querySelector('.minor-sidebar')!.innerHTML = template;
+  searchElement = document.querySelector('.search')!;
+  searchElement.querySelector('button')!.onclick = searchNext;
+  searchValue = searchElement.querySelector('[name="search"]')!;
 }

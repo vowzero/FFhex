@@ -1,4 +1,5 @@
 import { App } from "./app";
+import { FilePage } from "./filepage";
 import { newTabButton, newTabContent,tabDestoryCurrent,activeTab } from "./tab";
 
 function openFile() {
@@ -22,10 +23,10 @@ function help() {
 }
 
 function addFileTab(file:File){
-  let app:App=App.openFile(file)!;
-  newTabButton(app.pageID,file.name,true);
-  newTabContent(app.pageID,app.editorElement);
-  activeTab(app.pageID);
+  let app:FilePage=App.openFile(file)!;
+  newTabButton(app.fileID,file.name,true);
+  newTabContent(app.fileID,app.editorElement);
+  activeTab(app.fileID);
 }
 
 function inputFileOnClick(event:Event){

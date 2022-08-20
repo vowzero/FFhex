@@ -38,11 +38,6 @@ li{
   list-style: none;
 }
 
-#app {
-
-}
-
-
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -176,7 +171,6 @@ button:focus-visible {
 }
 .editor-hex-area span{
   padding-inline-end:5px;
-
 }
 .editor-hex-area span:nth-child(16n)::after{
   content:"\a";
@@ -195,13 +189,15 @@ button:focus-visible {
 .editor-text-area span:nth-child(16n)::after{
   content:"\a";
 }
+.editor-hex-area span.highlight,.editor-text-area span.highlight{
+  background: rgba(255,255,0,0.8);
+}
 .editor-hex-area span.hover,.editor-text-area span.hover{
   background: #235423;
 }
 .editor-hex-area span.cursor,.editor-text-area span.cursor{
   background: #535bf2;
 }
-
 .editor-scroll{
   min-width:15px;
   background:red;
