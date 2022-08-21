@@ -14,8 +14,8 @@ export function throttle(this: any, func: any, timeout: number) {
   }
 }
 
-export function calcBytesAlign(bytes: number, radix: number): number {
-  return Math.floor((Math.floor(bytes) + radix - 1) / radix) * radix;
+export function calcBytesAlign(size: number, alignSize: number): number {
+  return Math.floor((Math.floor(size) + alignSize - 1) / alignSize) * alignSize;
 }
 
 export class BytesFormat {

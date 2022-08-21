@@ -1,5 +1,25 @@
 import { FilePage } from "./filepage";
 
+export enum ByteType{
+  binary,
+  hex,
+  uint8,
+  uint16,
+  uint32,
+  uint64,
+  int8,
+  int16,
+  int32,
+  int64,
+  float16,
+  float32,
+  float64,
+  ascii,
+  utf8,
+  utf16,
+  utf32,
+};
+
 export class App {
   static pool: FilePage[] = [];
   static pageCount: number;
@@ -26,7 +46,9 @@ export class App {
   }
 
   static closeFile(fileID: number) {
-    App.pool.filter(file => file.fileID == fileID)[0].destory();
+    const filePage:FilePage=App.pool.find(file => file.fileID == fileID)!;
+    App.hookCall('beforeCloseFile',filePage);
+    filePage.destory();
     this.pageCount--;
     this.currentPage = null;
   }

@@ -42,6 +42,7 @@ export class FilePage {
   }
 
   get editorElement() { return this._pageElement; }
+  get hexAreaElement() { return this._HexArea; }
 
   public readFile(offset: number, length: number): Promise<FileReadResult> {
     return new Promise<FileReadResult>((resolve, reject) => {
