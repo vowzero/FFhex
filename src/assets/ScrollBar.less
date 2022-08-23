@@ -1,0 +1,31 @@
+@scrollbar-btn-color:#909399;
+@scrollbar-btn-width:6px;
+.virtual-scrollbar{
+  min-width:@scrollbar-btn-width;
+  position:absolute;
+  right: 0;
+  height: 100%;
+  .scroll-btn-ctrl(){
+    background: @scrollbar-btn-color;
+    width:@scrollbar-btn-width;
+    height:@scrollbar-btn-width;
+    border-radius: 100%;
+    position: absolute;
+  }
+  & .scroll-up{
+    .scroll-btn-ctrl();
+    top:0;
+  }
+  & .scroll-down{
+    .scroll-btn-ctrl();
+    bottom: 0;
+  }
+  & .scroll-bar{
+    width:@scrollbar-btn-width;
+    background: @scrollbar-btn-color;
+    top:@scrollbar-btn-width;
+    min-height:30px;
+    border-radius: 4px;
+    position: absolute;
+  }
+}

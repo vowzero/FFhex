@@ -1,5 +1,14 @@
 import { App } from "./app";
+import { ScrollBar } from "./components/ScrollBar";
+import { VirtualList } from "./components/VirtualList";
 import { calcBytesAlign, throttle } from "./utils";
+
+const template=`
+<div class="editor-line-number"></div>
+<div class="editor-hex-area"></div>
+<div class="editor-text-area"></div>
+<div class="virtual-scrollbar"></div>
+`;
 
 export interface FileReadResult {
   offset: number;
@@ -17,7 +26,6 @@ export class FilePage {
   public pageBytesCount: number = 0;          // Clac by eachLineBytes and pageMaxLine
   public fileTotalBytes: number = 0;          // File bytes size
   public offsetAddressMaxLength: number = 8;  // Each address pads max length
-  public scrollRatio: number = 0;             // The ratio of the window offset to the total length
   private _inputFile!: File;                  // Which file is opened
   private _fileArrayBuffer!: ArrayBuffer;     // Window bytes ArrayBuffer
   private _pageElement!: HTMLDivElement;      // The top layer container element
@@ -26,6 +34,7 @@ export class FilePage {
   private _TextArea!: HTMLDivElement;         // Minor window to show text for hex
   private _Scroll!: HTMLDivElement;           // Right scroll bar
   private _lastLineAddress: number = 0;       // Last address line number
+  private _ScrollBar!: ScrollBar;
 
   constructor(id:number,file: File) {
     this.fileID = id;
@@ -67,31 +76,34 @@ export class FilePage {
     this.readFile(windowOffset, this.pageBytesCount).then((res: FileReadResult) => {
       this._fileArrayBuffer = res.result as ArrayBuffer;
       this.updateEditorPage();
-      this.updateScrollPosition(windowOffset / this.fileTotalBytes);
+      this._ScrollBar.updateScrollDisplayRatio(windowOffset / (this.fileTotalBytes-this.pageBytesCount));
       App.hookCall('afterWindowSeek',this._fileArrayBuffer);
     });
 
+  }
+  private onScroll(type:number,value:number){
+    switch(type){
+      case ScrollBar.UP:
+        this.seekWindowOffset(this.windowOffset - this.eachLineBytes);
+        break;
+      case ScrollBar.DOWN:
+        this.seekWindowOffset(this.windowOffset + this.eachLineBytes);
+        break;
+      case ScrollBar.DRAG:
+        this.seekWindowOffset(calcBytesAlign(this.fileTotalBytes * value, this.eachLineBytes));
+    }
   }
 
   private initEditorPage() {
     const page: HTMLDivElement = document.createElement('div');
     page.classList.add('editor-page');
     page.dataset['pageId'] = this.fileID.toString();
-    page.innerHTML = `
-        <div class="editor-line-number"></div>
-        <div class="editor-hex-area"></div>
-        <div class="editor-text-area"></div>
-        <div class="editor-scroll">
-          <div class="scroll-up"></div>
-          <div class="scroll-bar" style="top:15px;"></div>
-          <div class="scroll-down"></div>
-        </div>
-      `;
+    page.innerHTML = template;
     document.querySelector<HTMLDivElement>('.tab-contents')?.appendChild(page);
     this._LineNumber = page.querySelector('.editor-line-number')!;
     this._HexArea = page.querySelector('.editor-hex-area')!;
     this._TextArea = page.querySelector('.editor-text-area')!;
-    this._Scroll = page.querySelector('.editor-scroll')!;
+    this._Scroll = page.querySelector('.virtual-scrollbar')!;
     this._pageElement = page;
 
     page.oncontextmenu = (event: MouseEvent) => {
@@ -112,22 +124,7 @@ export class FilePage {
       // Scroll a quarter of a page at once
       this.seekWindowOffset(this.windowOffset + delta * this.eachLineBytes * Math.floor(this.pageMaxLine * 0.25));
     };
-
-    this._Scroll.querySelector<HTMLDivElement>('.scroll-up')!.onclick = () => this.seekWindowOffset(this.windowOffset - this.eachLineBytes);
-    this._Scroll.querySelector<HTMLDivElement>('.scroll-down')!.onclick = () => this.seekWindowOffset(this.windowOffset + this.eachLineBytes);
-    this._Scroll.querySelector<HTMLDivElement>('.scroll-bar')!.onmousedown = () => {
-      document.onmousemove = throttle((event: MouseEvent) => {
-        let height: number = this._Scroll.offsetHeight;
-        let clipTop = event.pageY - this._Scroll.getBoundingClientRect().top;
-        if (clipTop < 15) clipTop = 15;
-        if (clipTop > height - 30) clipTop = height - 30;
-        this.updateScrollPosition((clipTop - 15) / (height - 45))
-
-        this.seekWindowOffset(calcBytesAlign(this.fileTotalBytes * this.scrollRatio, this.eachLineBytes));
-      }, 10);
-      document.onmouseup = () => document.onmousemove = document.onmouseup = null;
-    };
-
+    this._ScrollBar=new ScrollBar(this._Scroll,this.onScroll.bind(this));
   }
 
   private byteOnclick(event: MouseEvent) {
@@ -145,7 +142,6 @@ export class FilePage {
     this._LineNumber.innerHTML = '';
     this._HexArea.innerHTML = '';
     this._TextArea.innerHTML = '';
-    // this._Scroll.innerHTML=''; // Scroll needn't adjust
 
     // calc max line number
     this.pageMaxLine = Math.floor(this._HexArea.getBoundingClientRect().height / 26)
@@ -252,16 +248,7 @@ export class FilePage {
     }
   }
 
-  private updateScrollPosition(ratio: number) {
-    let maxRatio = 1 - (this.pageMaxLine * this.eachLineBytes) / this.fileTotalBytes;
-    if (ratio > maxRatio) {
-      this.scrollRatio = maxRatio;
-    } else {
-      this.scrollRatio = ratio;
-    }
-    this._Scroll.querySelector<HTMLDivElement>('.scroll-bar')!.style.top = (755 * this.scrollRatio + 15).toString() + 'px';
 
-  }
   private removeByteSpanClass(classname: string) {
     let cursorElements = this._pageElement.querySelectorAll(`span.${classname}`);
     cursorElements.forEach((aSpan: Element) => {

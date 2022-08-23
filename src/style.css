@@ -198,34 +198,8 @@ button:focus-visible {
 .editor-hex-area span.cursor,.editor-text-area span.cursor{
   background: #535bf2;
 }
-.editor-scroll{
-  min-width:15px;
-  background:red;
-  position:absolute;
-  right: 0;
-  height: 100%;
-}
-.editor-scroll .scroll-up{
-  width:15px;
-  height:15px;
-  background: black;
-  position: absolute;
-  top:0;
-}
-.editor-scroll .scroll-down{
-  width:15px;
-  height:15px;
-  background: black;
-  position: absolute;
-  bottom: 0;
-}
-.editor-scroll .scroll-bar{
-  width:15px;
-  height:15px;
-  background: #fff;
-  position: absolute;
-  top:15px;
-}
+
+
 
 .module-container{
   width: 100%;
@@ -271,3 +245,22 @@ button:focus-visible {
   display: inline-block;
   margin-left: 2rem;
 }
+
+.search ul{
+  display: block;
+}
+
+.search ul li{
+  display: block;
+}
+
+.virtual-list-box{
+  overflow: auto;
+}
+
+.virtual-list-container{
+  overflow: hidden;
+}
+
+
+

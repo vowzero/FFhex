@@ -1,9 +1,10 @@
 import { App, ByteType } from "./app";
+import { VirtualList } from "./components/VirtualList";
 import { FilePage, FileReadResult } from "./filepage";
 import { folded } from "./icon";
 import { boyerMoore } from "./StringMatch/Boyer-Moore";
 import { ByteArray, calcBytesAlign } from "./utils";
-
+import "./components/ScrollBar"
 const template = `
 <div class="search module-container">
   <div class="module-title">
@@ -12,28 +13,32 @@ const template = `
   </div>
   <div>
     <div>
-      内容：<input name="search" type="text"/>
+      <select name="search-type">
+        <option value="${ByteType.binary}">Binary</option>
+        <option value="${ByteType.hex}" selected>Hex</option>
+        <option value="${ByteType.ascii}">ASCII</option>
+        <option value="${ByteType.utf8}">UTF-8</option>
+        <option value="${ByteType.utf16}">UTF-16</option>
+        <option value="${ByteType.utf32}">UTF-32</option>
+        <option value="${ByteType.uint8}">UInt8</option>
+        <option value="${ByteType.uint16}">UInt16</option>
+        <option value="${ByteType.uint32}">UInt32</option>
+        <option value="${ByteType.uint64}">UInt64</option>
+        <option value="${ByteType.int8}">Int8</option>
+        <option value="${ByteType.int16}">Int16</option>
+        <option value="${ByteType.int32}">Int32</option>
+        <option value="${ByteType.int64}">Int64</option>
+        <option value="${ByteType.float16}">Float16</option>
+        <option value="${ByteType.float32}">Float32</option>
+        <option value="${ByteType.float64}">Float64</option>
+      </select>
+      内容：<input name="search-value" type="text"/>
       <button type="button">查找全部</button>
     </div>
-    <fieldset>
-      二进制:<input type="radio" name="type" />
-      十六进制:<input type="radio" name="type" />
-      ASCII:<input type="radio" name="type" />
-      UTF-8:<input type="radio" name="type" />
-      UTF-16:<input type="radio" name="type" />
-      UTF-32:<input type="radio" name="type" />
-      Int8<input type="radio" name="type" />
-      UInt8:<input type="radio" name="type" />
-      Int16:<input type="radio" name="type" />
-      UInt16:<input type="radio" name="type" />
-      Int32<input type="radio" name="type" />
-      UInt32<input type="radio" name="type" />
-      Int64<input type="radio" name="type" />
-      UInt64<input type="radio" name="type" />
-      float16<input type="radio" name="type" />
-      float32<input type="radio" name="type" />
-      float64<input type="radio" name="type" />
-      </fieldset>
+    <div>
+      <ul>
+      </ul>
+    </div>
   </div>
 </div>
 `;
@@ -103,7 +108,7 @@ function updateHighlight() {
 function createEmptyConfig(): SearchConfig {
   return {
     hightlight: true,
-    type: ByteType.hex,
+    type: parseInt((document.querySelector("[name=search-type]")! as HTMLSelectElement).value) as unknown as ByteType,
   } as SearchConfig;
 }
 
@@ -120,15 +125,6 @@ function searchValueToBytes(toSeach:string,config:SearchConfig):ToSearchBytes {
   let bytesArray: number[]=[];
   let result: ToSearchBytes;
   switch (config.type) {
-    default:
-    case ByteType.binary:
-      asType = toSeach.slice(0).toLowerCase().replace(' ', '').replace(/[^01]/ig, '');
-      asType = asType.padStart(calcBytesAlign(asType.length, 8), '0');
-      for (let i = 0; i < asType.length - 1; i += 8) {
-        let binStr = asType.slice(i, i + 8);
-        bytesArray.push(parseInt(binStr, 2));
-      }
-      break;
     case ByteType.hex:
       asType = toSeach.slice(0).toLowerCase().replace(' ', '').replace(/[^a-f0-9]/ig, '');
       for (let i = 0; i < asType.length - 1; i += 2) {
@@ -144,6 +140,15 @@ function searchValueToBytes(toSeach:string,config:SearchConfig):ToSearchBytes {
         bytesArray.push(code <= 0xff ? code : 0x00);
       }
       break;
+    default:
+      case ByteType.binary:
+        asType = toSeach.slice(0).toLowerCase().replace(' ', '').replace(/[^01]/ig, '');
+        asType = asType.padStart(calcBytesAlign(asType.length, 8), '0');
+        for (let i = 0; i < asType.length - 1; i += 8) {
+          let binStr = asType.slice(i, i + 8);
+          bytesArray.push(parseInt(binStr, 2));
+        }
+        break;
   }
 
   result = { type: config.type, bytes: makeByteArray(bytesArray) };
@@ -175,7 +180,7 @@ function searchDoneProgress(){
 function searchDone(){
   console.log(searchFiles);
   searchDoneProgress();
-  openHighlight();
+  updateHighlight();
 }
 
 function searchAll() {
@@ -245,9 +250,24 @@ export function setupSearch() {
   document.querySelector('.minor-sidebar')!.innerHTML = template;
   searchElement = document.querySelector('.search')!;
   searchElement.querySelector('button')!.onclick = searchAll;
-  searchInputElement = searchElement.querySelector('[name="search"]')!;
+  searchInputElement = searchElement.querySelector('[name="search-value"]')!;
   App.hookRegister('afterWindowSeek', updateHighlight);
   App.hookRegister('afterSwitchPage', selectFilePage);
   App.hookRegister('afterOpenFile', initSearchResult);
   App.hookRegister('beforeCloseFile', destorySearchResult);
+  let ul=searchElement.querySelector('ul');
+  for(let i=0; i<20; i++) {
+    let li=document.createElement('li');
+    li.innerHTML=i.toString();
+    ul?.appendChild(li);
+  }
+  const uf=(offset:number)=>{
+    for(let i=0;i<20;i++){
+      ul!.children[i].innerHTML=(i+offset).toString();
+    }
+  };
+  const vl:VirtualList=new VirtualList(ul!,uf);
+  vl.childrenNum=200;
+  vl.childHeight=24;
+  vl.displayHeight=480;
 }
