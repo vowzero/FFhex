@@ -5,6 +5,7 @@ import { folded } from "./icon";
 import { boyerMoore } from "./StringMatch/Boyer-Moore";
 import { ByteArray, calcBytesAlign } from "./utils";
 import "./components/ScrollBar"
+import { ScrollBar } from "./components/ScrollBar";
 const template = `
 <div class="search module-container">
   <div class="module-title">
@@ -35,9 +36,8 @@ const template = `
       内容：<input name="search-value" type="text"/>
       <button type="button">查找全部</button>
     </div>
-    <div>
-      <ul>
-      </ul>
+    <div class="search-results">
+      <ul></ul>
     </div>
   </div>
 </div>
@@ -261,13 +261,30 @@ export function setupSearch() {
     li.innerHTML=i.toString();
     ul?.appendChild(li);
   }
-  const uf=(offset:number)=>{
+  let childrenNum=200;
+  let childHeight=24;
+  const uf=(type:number,ratio:number,newRatio?:Function)=>{
+    let childrenNum=180;
+    let offset:number;
+    if(type===ScrollBar.UP){
+      offset=childrenNum*ratio-10;
+      if(offset<0)offset=0;
+      newRatio!(offset/(childrenNum));
+    }else if(type===ScrollBar.DOWN){
+      offset=childrenNum*ratio+10;
+      if(offset>200-20)offset=200-20;
+      newRatio!(offset/(childrenNum));
+    }else if(type===ScrollBar.DRAG){
+      offset=childrenNum*ratio;
+    }
+    offset=Math.floor(offset!);
+    // if(offset>200-20)return;
+    // 
     for(let i=0;i<20;i++){
-      ul!.children[i].innerHTML=(i+offset).toString();
+      ul!.children[i].innerHTML=(i+offset!).toString();
     }
   };
   const vl:VirtualList=new VirtualList(ul!,uf);
-  vl.childrenNum=200;
-  vl.childHeight=24;
+
   vl.displayHeight=480;
 }

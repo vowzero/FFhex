@@ -1,5 +1,9 @@
 @scrollbar-btn-color:#909399;
 @scrollbar-btn-width:6px;
+.virtual-scrollbar-box{
+  display: flex;
+  position: relative;
+}
 .virtual-scrollbar{
   min-width:@scrollbar-btn-width;
   position:absolute;
@@ -27,5 +31,8 @@
     min-height:30px;
     border-radius: 4px;
     position: absolute;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
   }
 }

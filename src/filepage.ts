@@ -1,13 +1,13 @@
 import { App } from "./app";
 import { ScrollBar } from "./components/ScrollBar";
-import { VirtualList } from "./components/VirtualList";
-import { calcBytesAlign, throttle } from "./utils";
+import { calcBytesAlign } from "./utils";
+import "./assets/css/FilePage.less"
 
 const template=`
 <div class="editor-line-number"></div>
 <div class="editor-hex-area"></div>
 <div class="editor-text-area"></div>
-<div class="virtual-scrollbar"></div>
+<div class="editor-scrollbar"></div>
 `;
 
 export interface FileReadResult {
@@ -79,8 +79,8 @@ export class FilePage {
       this._ScrollBar.updateScrollDisplayRatio(windowOffset / (this.fileTotalBytes-this.pageBytesCount));
       App.hookCall('afterWindowSeek',this._fileArrayBuffer);
     });
-
   }
+
   private onScroll(type:number,value:number){
     switch(type){
       case ScrollBar.UP:
@@ -90,7 +90,7 @@ export class FilePage {
         this.seekWindowOffset(this.windowOffset + this.eachLineBytes);
         break;
       case ScrollBar.DRAG:
-        this.seekWindowOffset(calcBytesAlign(this.fileTotalBytes * value, this.eachLineBytes));
+        this.seekWindowOffset(calcBytesAlign(this.fileTotalBytes * value!, this.eachLineBytes));
     }
   }
 
@@ -103,7 +103,7 @@ export class FilePage {
     this._LineNumber = page.querySelector('.editor-line-number')!;
     this._HexArea = page.querySelector('.editor-hex-area')!;
     this._TextArea = page.querySelector('.editor-text-area')!;
-    this._Scroll = page.querySelector('.virtual-scrollbar')!;
+    this._Scroll = page.querySelector('.editor-scrollbar')!;
     this._pageElement = page;
 
     page.oncontextmenu = (event: MouseEvent) => {
@@ -119,12 +119,7 @@ export class FilePage {
       menu.style.display = 'none';
     };
 
-    page.onwheel = (event: WheelEvent) => {
-      let delta = event.deltaY > 0 ? 1 : -1;
-      // Scroll a quarter of a page at once
-      this.seekWindowOffset(this.windowOffset + delta * this.eachLineBytes * Math.floor(this.pageMaxLine * 0.25));
-    };
-    this._ScrollBar=new ScrollBar(this._Scroll,this.onScroll.bind(this));
+    this._ScrollBar=new ScrollBar(this._pageElement,this._Scroll,this.onScroll.bind(this));
   }
 
   private byteOnclick(event: MouseEvent) {

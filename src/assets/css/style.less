@@ -22,6 +22,7 @@ body {
   /* place-items: center; */
   min-width: 320px;
   min-height: 100vh;
+  overscroll-behavior: none;
 }
 
 h1 {
@@ -139,65 +140,6 @@ button:focus-visible {
   height: 100%;
   flex: 1;
 }
-.editor-page{
-  display: flex;
-  position:relative;
-  width: 100%;
-}
-.editor-page.tab-page.active{
-  display: flex;
-}
-.editor-page span{
-  padding-top: 1px;
-  padding-bottom: 1px;
-  line-height: 26px;
-  font-family: "Source Code Pro", "Courier New", Consolas, Menlo, "PT Mono", "Liberation Mono", monospace;
-  cursor:default;
-}
-
-.editor-line-number{
-  padding-right: 5px;
-}
-
-.editor-line-number div{
-  padding-top: 1px;
-  padding-bottom: 1px;
-  font-family: "Source Code Pro", "Courier New", Consolas, Menlo, "PT Mono", "Liberation Mono", monospace;
-  cursor:default;
-}
-.editor-hex-area{
-  white-space: pre-wrap;
-  padding-left: 3rem;
-}
-.editor-hex-area span{
-  padding-inline-end:5px;
-}
-.editor-hex-area span:nth-child(16n)::after{
-  content:"\a";
-}
-
-.editor-text-area{
-  padding-left: 3rem;
-  margin-right: 30px;
-  white-space: pre-wrap;
-}
-.editor-text-area span{
-  padding-top: 1px;
-  padding-bottom: 1px;
-  padding-inline-end:5px;
-}
-.editor-text-area span:nth-child(16n)::after{
-  content:"\a";
-}
-.editor-hex-area span.highlight,.editor-text-area span.highlight{
-  background: rgba(255,255,0,0.8);
-}
-.editor-hex-area span.hover,.editor-text-area span.hover{
-  background: #235423;
-}
-.editor-hex-area span.cursor,.editor-text-area span.cursor{
-  background: #535bf2;
-}
 
 
 
@@ -261,6 +203,5 @@ button:focus-visible {
 .virtual-list-container{
   overflow: hidden;
 }
-
 
 

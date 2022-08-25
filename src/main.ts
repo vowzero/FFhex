@@ -1,4 +1,4 @@
-import './style.css'
+import './assets/css/style.less'
 import { SVG_openFile,SVG_closeFile,SVG_templateLib,SVG_search,SVG_help } from './icon';
 import { setupToolbar } from './toolbar';
 import { setupTab } from './tab';
