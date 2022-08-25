@@ -34,7 +34,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 `;
 
 App.hookRegister('init',()=>{
-  console.log("welcome, the more infomation and usages are in github:https://github.com/vowzero/hexeditor");
+  console.log("welcome, the more infomation and usages are in github:https://github.com/vowzero/FFhex");
   setupToolbar();
   setupTab();
   setupDataViewer();
