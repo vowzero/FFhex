@@ -1,5 +1,13 @@
+@font-face {
+  font-family: "Source Code Pro";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: local("Source Code Pro"), local("SourceCodePro-Regular"), url("../fonts/SourceCodePro.woff")format("woff");
+}
+
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Source Code Pro", sans-serif,"Microsoft Yahei";
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
@@ -45,7 +53,6 @@ button {
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
-  font-family: inherit;
   background-color: #eee;
   cursor: pointer;
   transition: border-color 0.25s;
@@ -188,13 +195,7 @@ button:focus-visible {
   margin-left: 2rem;
 }
 
-.search ul{
-  display: block;
-}
 
-.search ul li{
-  display: block;
-}
 
 .virtual-list-box{
   overflow: auto;

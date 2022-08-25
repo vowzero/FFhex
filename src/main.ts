@@ -5,6 +5,7 @@ import { setupTab } from './tab';
 import { setupDataViewer } from './dataviewer';
 import { setupSearch } from './search';
 import { App } from './app';
+import { WelcomePage } from './components/WelcomePage';
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="editor-container">
   <div class="main-area">
@@ -20,7 +21,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="tabs"><ul></ul></div>
     <div class="hex-editor">
       <div class="tab-contents">
-        <div class="tab-page" data-index="0">welcome</div>
+        <div class="tab-page" data-index="0">${WelcomePage}</div>
       </div>
       <div class="minor-sidebar">123</div>
     </div>
@@ -38,6 +39,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 </div>
 <input id="select-file" name="select-file" type="file" hidden/>
 `;
+
+new ResizeObserver((e)=>{
+  console.log(e);
+}).observe(document.body);
 
 App.hookRegister('init',()=>{
   console.log("====debug:init====");

@@ -4,7 +4,7 @@ import { BoyerMooreBytes } from "./StringMatch/Boyer-Moore";
  * quickly to throttle even in event
  */
 export function throttle(this: any, func: any, timeout: number) {
-  let timer: number | null = null;
+  let timer: any | null = null;
   return (...args: any) => {
     if (timer) return;
     timer = setTimeout(() => {
@@ -14,10 +14,15 @@ export function throttle(this: any, func: any, timeout: number) {
   }
 }
 
+/**
+ * Return a new size that greater than size and is an integer multiple of alignSize
+ */
 export function calcBytesAlign(size: number, alignSize: number): number {
   return Math.floor((Math.floor(size) + alignSize - 1) / alignSize) * alignSize;
 }
 
+
+/** Original bytes data format to visual data form */
 export class BytesFormat {
   [props: string]: any;
   private _offset: number = 0;
@@ -231,6 +236,9 @@ export class BytesFormat {
   }
 }
 
+/**
+ * A wrapper function makes ArrayBuffer have the same "at" function as the basic type
+ */
 export class ByteArray implements BoyerMooreBytes{
   private bytes: Uint8Array;
   constructor(arrbuf: ArrayBuffer) {

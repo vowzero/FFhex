@@ -70,6 +70,6 @@ export function setupTab(){
   tabsContent=document.querySelector('.tab-contents')!;
   activeIndex=0;
   tabIDs=[];
-  newTabButton(0,'欢迎页',false);
+  newTabButton(0,'Home',false);
   activeTab(0);
 }
