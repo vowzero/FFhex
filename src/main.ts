@@ -1,23 +1,16 @@
-import './assets/css/style.less'
-import { SVG_openFile,SVG_closeFile,SVG_templateLib,SVG_search,SVG_help } from './icon';
-import { setupToolbar } from './toolbar';
-import { setupTab } from './tab';
-import { setupDataViewer } from './dataviewer';
-import { setupSearch } from './search';
-import { App } from './app';
-import { WelcomePage } from './components/WelcomePage';
+import { setupToolbar } from '@/components/ToolBar';
+import { setupTab } from '@/components/Tab';
+import { setupDataViewer } from '@/components/DataViewer';
+import { setupSearch } from '@/components/Search';
+import { App } from '@/app';
+import { WelcomePage } from '@/components/WelcomePage';
+import 'default-passive-events';
+import '@/assets/css/style.less'
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="editor-container">
   <div class="main-area">
-    <div class="toolbar">
-      <ul>
-        <li><i>${SVG_openFile}</i>打开文件</li>
-        <li><i>${SVG_closeFile}</i>关闭文件</li>
-        <li><i>${SVG_templateLib}</i>模板库</li>
-        <li><i>${SVG_search}</i>搜索</li>
-        <li><i>${SVG_help}</i>帮助</li>
-      </ul>
-    </div>
+    <div class="toolbar"></div>
     <div class="tabs"><ul></ul></div>
     <div class="hex-editor">
       <div class="tab-contents">
@@ -40,12 +33,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <input id="select-file" name="select-file" type="file" hidden/>
 `;
 
-new ResizeObserver((e)=>{
-  console.log(e);
-}).observe(document.body);
-
 App.hookRegister('init',()=>{
-  console.log("====debug:init====");
+  console.log("welcome, the more infomation and usages are in github:https://github.com/vowzero/hexeditor");
   setupToolbar();
   setupTab();
   setupDataViewer();

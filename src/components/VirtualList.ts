@@ -1,4 +1,4 @@
-import { ScrollBar,ScrollTo } from "./ScrollBar";
+import { ScrollBar,ScrollTo } from "@/components/ScrollBar";
 
 export class VirtualList {
   private _listBox: HTMLElement;

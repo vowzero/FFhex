@@ -1,4 +1,4 @@
-import { BoyerMooreBytes } from "./StringMatch/Boyer-Moore";
+import { BoyerMooreBytes } from "@/modules/Boyer-Moore";
 
 /**
  * quickly to throttle even in event

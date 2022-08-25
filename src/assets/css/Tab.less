@@ -1,0 +1,46 @@
+@tab-main-color:#eee;
+@tab-hover-color:#ddd;
+
+.tabs a{
+  color:#333;
+  cursor:pointer;
+}
+
+.tabs li{
+  padding: .5rem 1rem .25rem;
+  border-radius: 20% 20% 0 0;
+  cursor:default;
+}
+
+.tabs li:hover{
+  background: @tab-hover-color;
+}
+
+.tabs li.active{
+  background: @tab-main-color;
+}
+
+.tabs svg{
+  width:.8rem;
+  height:.8rem;
+  margin-left: .5rem;
+}
+
+.tab-page{
+  background: @tab-main-color;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+.tab-page,.editor-page.tab-page{
+  display: none;
+}
+.tab-page.active{
+  display:block;
+}
+
+.tab-contents{
+  display: flex;
+  width: 100%;
+}

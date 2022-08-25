@@ -1,4 +1,4 @@
-import { FilePage } from "./filepage";
+import { FilePage } from "@/components/FilePage";
 
 export enum ByteType{
   binary,

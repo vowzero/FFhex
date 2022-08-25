@@ -1,6 +1,6 @@
-import { FileReadResult } from "./filepage";
-import { boyerMoore } from "./StringMatch/Boyer-Moore";
-import { ByteArray } from "./utils";
+import { FileReadResult } from "@/components/FilePage";
+import { boyerMoore } from "@/modules/Boyer-Moore";
+import { ByteArray } from "@/utils";
 
 addEventListener("message",(ev)=>{
   if(ev.data.command=='search'){

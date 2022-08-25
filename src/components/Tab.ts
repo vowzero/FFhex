@@ -1,5 +1,7 @@
-import { App } from './app';
-import { SVG_closeFile } from './icon';
+import { App } from '@/app';
+import { SVG_closeFile } from '@/components/Icon';
+import "@/assets/css/Tab.less";
+
 let tabsElement:HTMLUListElement;
 let tabsContent:HTMLDivElement;
 let tabIDs:number[];

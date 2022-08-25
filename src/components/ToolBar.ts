@@ -1,6 +1,18 @@
-import { App } from "./app";
-import { FilePage } from "./filepage";
-import { newTabButton, newTabContent,tabDestoryCurrent,activeTab } from "./tab";
+import { App } from "@/app";
+import { FilePage } from "@/components/FilePage";
+import { SVG_openFile, SVG_closeFile, SVG_templateLib, SVG_search, SVG_help } from "./Icon";
+import { newTabButton, newTabContent,tabDestoryCurrent,activeTab } from "./Tab";
+import "../assets/css/ToolBar.less";
+
+const template=`
+<ul>
+  <li><i>${SVG_openFile}</i>打开文件</li>
+  <li><i>${SVG_closeFile}</i>关闭文件</li>
+  <li><i>${SVG_templateLib}</i>模板库</li>
+  <li><i>${SVG_search}</i>搜索</li>
+  <li><i>${SVG_help}</i>帮助</li>
+</ul>
+`;
 
 function openFile() {
   document.getElementById('select-file')!.click();
@@ -11,14 +23,17 @@ function closeFile() {
 }
 
 function templateLib() {
+  alert("制作中……");
   console.log('模板库');
 }
 
 function search() {
+  alert("制作中……");
   console.log('搜索');
 }
 
 function help() {
+  alert("制作中……");
   console.log('帮助');
 }
 
@@ -44,6 +59,8 @@ function inputFileOnClick(event:Event){
 const toolbarClick: any = [openFile, closeFile, templateLib, search, help];
 
 export function setupToolbar() {
-  document.querySelector<HTMLElement>('.toolbar')!.querySelectorAll('li').forEach((e: HTMLLIElement, k: number) => e.onclick = toolbarClick[k]);
-  document.querySelector('input')!.addEventListener('change',inputFileOnClick);
+  const toolbar=document.querySelector<HTMLElement>('.toolbar')!;
+  toolbar.innerHTML=template;
+  toolbar.querySelectorAll('li').forEach((e: HTMLLIElement, k: number) => e.onclick = toolbarClick[k]);
+  document.querySelector('input[type="file"]')!.addEventListener('change',inputFileOnClick);
 }

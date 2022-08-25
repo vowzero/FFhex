@@ -1,7 +1,7 @@
-import { App } from "./app";
-import { ScrollBar } from "./components/ScrollBar";
-import { calcBytesAlign } from "./utils";
-import "./assets/css/FilePage.less";
+import { App } from "@/app";
+import { ScrollBar } from "@/components/ScrollBar";
+import { calcBytesAlign } from "@/utils";
+import "@/assets/css/FilePage.less";
 
 const template = `
 <div class="editor-line-number"></div>
@@ -183,6 +183,8 @@ export class FilePage {
     this._HexArea.innerHTML = "";
     this._TextArea.innerHTML = "";
 
+    // TODO: EventListener parent
+
     // calc max line number
     this.pageMaxLine = Math.floor(
       this._HexArea.getBoundingClientRect().height / 26
@@ -245,7 +247,7 @@ export class FilePage {
       aSpan.textContent = (this.windowOffset + offset)
         .toString(16)
         .toUpperCase()
-        .padStart(this.offsetAddressMaxLength, "0");
+        .padStart(this.offsetAddressMaxLength, "0")+':';
     }
     const bytesCount: number = this.pageMaxLine * this.eachLineBytes;
     const dataview: DataView = new DataView(this._fileArrayBuffer);

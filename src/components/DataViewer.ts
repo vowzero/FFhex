@@ -1,6 +1,7 @@
-import { App } from "./app";
-import { folded } from "./icon";
-import { BytesFormat } from "./utils";
+import { App } from "@/app";
+import { folded } from "@/components/Icon";
+import { BytesFormat } from "@/utils";
+import "@/assets/css/DataViewer.less"
 
 const dataViewerList: string[] = ['binary', 'uint8', 'int8', 'uint16', 'int16', 'uint32', 'int32', 'uint64', 'int64', 'float16', 'float32', 'float64', 'ascii', 'utf8', 'utf16', 'utf32'];
 const template = `
@@ -16,7 +17,6 @@ const template = `
     </div>
   </div>
   <div class="module-content grid">
-    <!--<div class="grid-row">-->
       <div class="">类型</div>
       <div class="">值</div>
       <div class="" data-type="binary">二进制</div>
@@ -51,12 +51,11 @@ const template = `
       <div class="" data-type="v-utf16">[Please select Bytes]</div>
       <div class="" data-type="utf32">UTF-32</div>
       <div class="" data-type="v-utf32">[Please select Bytes]</div>
-    <!--</div>-->
   </div>
 </div>
 `;
 
-let littleEndian: boolean;
+let littleEndian: boolean=false;
 let dataViewerElement: HTMLElement;
 let lastOffset: number|null=null;
 let lastBuffer:ArrayBuffer|null;
@@ -84,7 +83,6 @@ function updateDataViewer(_file:any,offset: number, buffer: ArrayBuffer) {
 
 export function setupDataViewer() {
   document.querySelector('.sidebar')!.innerHTML += template;
-  littleEndian = false;
   dataViewerElement = document.querySelector('.sidebar .data-viewer')!;
   // endian radio onclick listener
   dataViewerElement.querySelectorAll('[name="dataviewer-endian"]').forEach((e) => (e as HTMLInputElement).onclick = () => {

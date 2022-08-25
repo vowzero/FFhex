@@ -1,12 +1,27 @@
-.search ul{
-  display: block;
+.search .module-content {
+  padding: 1rem 1rem;
 }
 
-.search ul li{
+.search ul {
   display: block;
+  width: 100%;
 }
 
-.search-progress{
+.search ul li {
+  display: block;
+  cursor: default;
+  width: 100%;
+  &:hover {
+    background: #eee;
+  }
+}
+
+.search button {
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.search-progress {
   background-color: rgb(222, 228, 247);
   margin: 10px auto;
   width: 90%;
@@ -17,7 +32,7 @@
   align-items: center;
 }
 
-.search-progress-inner{
+.search-progress-inner {
   height: 100%;
   border-radius: 4px;
   transition: all 0.5s cubic-bezier(0, 0.64, 0.36, 1);

@@ -1,11 +1,10 @@
-import { App, ByteType } from "./app";
-import { VirtualList } from "./components/VirtualList";
-import { FilePage } from "./filepage";
-import { folded } from "./icon";
-import { ByteArray, calcBytesAlign } from "./utils";
-import "./components/ScrollBar";
-import { ScrollBar } from "./components/ScrollBar";
-import "./assets/css/Search.less";
+import { App, ByteType } from "@/app";
+import { VirtualList } from "@/components/VirtualList";
+import { FilePage } from "@/components/FilePage";
+import { folded } from "@/components/Icon";
+import { ByteArray, calcBytesAlign } from "@/utils";
+import { ScrollBar } from "@/components/ScrollBar";
+import "@/assets/css/Search.less";
 
 const template = `
 <div class="search module-container">
@@ -13,7 +12,7 @@ const template = `
     <i>${folded}</i>
     搜索
   </div>
-  <div>
+  <div class="module-content">
     <div>
       <select name="search-type">
         <option value="${ByteType.binary}">Binary</option>
@@ -37,8 +36,8 @@ const template = `
       内容：<input name="search-value" type="text"/>
       <button type="button">查找全部</button>
     </div>
-    <div class="search-progress"><div class="search-progress-inner"></div></div>
-    <div class="search-results"><div>搜索到：</div><ul></ul></div>
+    <div class="search-progress" style="display:none;"><div class="search-progress-inner"></div></div>
+    <div class="search-results" style="display:none;"><div>搜索结果：</div><ul></ul></div>
   </div>
 </div>
 `;
@@ -94,6 +93,7 @@ function openHighlight() {
   const { windowOffset, pageBytesCount, editorElement } =
     currentSearchFP.filePage;
   let hexArea = editorElement.querySelector(".editor-hex-area")!;
+  let textArea = editorElement.querySelector(".editor-text-area")!;
   const region: OffsetArea = {
     lower: windowOffset,
     upper: windowOffset + pageBytesCount,
@@ -105,6 +105,7 @@ function openHighlight() {
         if (offset + i < region.upper) {
           childOffset = offset + i - windowOffset;
           hexArea.children[childOffset].classList.add("highlight");
+          textArea.children[childOffset].classList.add("highlight");
         }
       }
     }
@@ -198,6 +199,7 @@ function searchInitProgress(total: number) {
 function searchInProgress() {
   if (!currentSearchFP) return;
   ++currentProgress;
+  (searchElement.querySelector('.search-progress') as HTMLElement).style.display='block';
   searchResultsElement.children[0].textContent = `${currentSearchFP.results.length} results have been found.`;
   (
     searchElement.querySelector(".search-progress-inner")! as HTMLElement
@@ -211,13 +213,15 @@ function searchInProgress() {
 function searchDoneProgress() {
   if (!currentSearchFP) return;
   searchResultsElement.children[0].textContent = `${currentSearchFP.results.length} results have been found.`;
+  (searchElement.querySelector('.search-results') as HTMLElement).style.display='block';
+  currentSearchFP.results.sort((a,b)=>a.offset-b.offset);
   resultListSeek(0);
   updateHighlight();
 }
 
 function newWorker(): [number, Worker] {
   workerIndex++;
-  const worker = new Worker(new URL("./searchFile.ts", import.meta.url), {
+  const worker = new Worker(new URL("../searchFile.ts", import.meta.url), {
     type: "module",
   });
   workerPools.set(workerIndex, worker);
@@ -292,8 +296,6 @@ function searchAll() {
       patternBuffer: toSearch.buffer,
     });
   });
-
-  console.log(123);
 }
 
 function selectFilePage(file: FilePage) {
@@ -373,7 +375,8 @@ function onResultScroll(type: number, ratio: number, newRatio?: Function) {
 }
 
 export function setupSearch() {
-  document.querySelector(".minor-sidebar")!.innerHTML = template;
+  document.querySelector(".sidebar")!.innerHTML += template;
+
   searchElement = document.querySelector(".search")!;
   searchElement.querySelector("button")!.onclick = searchAll;
   searchInputElement = searchElement.querySelector('[name="search-value"]')!;
@@ -383,12 +386,7 @@ export function setupSearch() {
   App.hookRegister("afterOpenFile", initSearchResult);
   App.hookRegister("beforeCloseFile", destorySearchResult);
   let ul = searchResultsElement.getElementsByTagName("ul")[0];
-  for (let i = 0; i < 20; i++) {
-    let li = document.createElement("li");
-    li.dataset["offset"] = i.toString();
-    li.innerHTML = i.toString();
-    ul?.appendChild(li);
-  }
+
   ul.addEventListener("click", (ev: MouseEvent) => {
     const li = ev
       .composedPath()
@@ -400,5 +398,10 @@ export function setupSearch() {
     currentSearchFP.filePage.setCursor(address);
   });
   const virtualList: VirtualList = new VirtualList(ul!, onResultScroll);
-  virtualList.displayHeight = 480;
+  for (let i = 0; i < 10; i++) {
+    let li = document.createElement("li");
+    li.dataset["offset"] = i.toString();
+    ul?.appendChild(li);
+  }
+  virtualList.displayHeight = 240;
 }

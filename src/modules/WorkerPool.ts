@@ -1,14 +1,14 @@
 
-class Queue{
+// class Queue{
   
-}
+// }
 
 export class WorkerPool{
   static fns:Map<string,Function> = new Map<string,Function>();
 
-  private _minPoolSize:number=10;
-  private _maxPoolSize:number=10;
-  private _runningPool:Queue=new Queue();
+  // private _minPoolSize:number=10;
+  // private _maxPoolSize:number=10;
+  // private _runningPool:Queue=new Queue();
 
   static register(obj:Object|string,fn?:Function){
     if(WorkerPool.fns.size==0){

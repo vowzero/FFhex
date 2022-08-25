@@ -1,5 +1,5 @@
-import "../assets/css/ScrollBar.less";
-import { throttle } from "../utils";
+import "@/assets/css/ScrollBar.less";
+import { throttle } from "@/utils";
 
 export interface ScrollTo {
   (type: number, ratio: number, updateRatio?: Function): void;

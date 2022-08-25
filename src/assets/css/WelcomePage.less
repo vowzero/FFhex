@@ -5,7 +5,6 @@
   justify-content: center;
   align-items: center;
   text-align: center;
-  font-size: 3rem;
   color: #aaa;
 
   -webkit-user-select: none;
@@ -13,4 +12,26 @@
   -ms-user-select: none;
   -o-user-select: none;
   user-select: none;
+
+  & article{
+    flex: 1;
+    display: flex;
+    align-items: center;
+    font-size: 3rem;
+    line-height: 3rem;
+  }
+
+  & footer{
+    display: inline-flex;
+    margin-top: 1rem;
+    font-size: 1rem;
+    line-height: 1rem;
+    height: 5rem;
+    & a{
+      margin: 0 .5rem;
+    }
+  }
+  & svg{
+    height: 1.5rem;
+  }
 }
