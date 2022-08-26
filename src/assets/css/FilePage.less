@@ -3,6 +3,9 @@
   position: relative;
   width: 100%;
   outline: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .editor-page.tab-page.active {
@@ -15,6 +18,7 @@
   line-height: 26px;
   font-family: "Source Code Pro", "Courier New", Consolas, Menlo, "PT Mono", "Liberation Mono", monospace;
   cursor: default;
+  padding: 0 3px;
 }
 
 .editor-line-number {
@@ -29,18 +33,65 @@
   cursor: default;
 }
 
+.editor-hex-area,.editor-text-area{
+  & span {
+    padding: 0 3px;
+    &:nth-child(16n)::after {
+      content: "\a";
+    }
+    @border:1px solid rgba(129,195,251,1);
+    &.selected:nth-child(16n),
+    &.selected-end {
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+      border-right: @border;
+      padding-right: 2px;
+    }
+
+    &.selected {
+      border-top: @border;
+      border-bottom:@border;
+      background-color: #ff9a3b21;
+      // box-shadow: 0 -1px 0 .5px rgba(0,0,255,0.8) inset;
+    }
+
+    &.selected:nth-child(16n + 1),
+    &.selected-begin {
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+      border-left: @border;
+      padding-left: 2px;
+    }
+  }
+}
+
+.editor-hex-area span.hover,
+.editor-text-area span.hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  &:not(.selected) {
+    border-radius: 4px;
+  }
+}
+
+.editor-hex-area span.cursor,
+.editor-text-area span.cursor {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.5);
+  &:not(.selected) {
+    border-radius: 4px;
+  }
+}
+
+.editor-hex-area span.highlight,
+.editor-text-area span.highlight {
+  background: rgba(255, 255, 0, 0.8);
+}
+
+
 .editor-hex-area {
   white-space: pre-wrap;
   padding-left: 3rem;
   outline: none;
-}
-
-.editor-hex-area span {
-  padding-inline-end: 5px;
-}
-
-.editor-hex-area span:nth-child(16n)::after {
-  content: "\a";
 }
 
 .editor-text-area {
@@ -48,25 +99,4 @@
   margin-right: 30px;
   white-space: pre-wrap;
   outline: none;
-}
-.editor-text-area span {
-  padding-top: 1px;
-  padding-bottom: 1px;
-  padding-inline-end: 5px;
-}
-.editor-text-area span:nth-child(16n)::after {
-  content: "\a";
-}
-
-.editor-hex-area span.highlight,
-.editor-text-area span.highlight {
-  background: rgba(255, 255, 0, 0.8);
-}
-.editor-hex-area span.hover,
-.editor-text-area span.hover {
-  background: #235423;
-}
-.editor-hex-area span.cursor,
-.editor-text-area span.cursor {
-  background: #535bf2;
 }
