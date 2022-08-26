@@ -85,7 +85,6 @@ export class BytesFormat {
     let e: number = ((bytes[0] & 0x7C) >> 2);
     let x: number = (((bytes[0] & 0x03) << 8) + ((bytes[1] & 0xFF) << 0)) / (Math.pow(2, 10));
     let res: number = Math.pow(-1, s) * (1 + x) * Math.pow(2, e - 15);
-    console.log(s, e, x)
     return res.toString();
   }
   get float32(): string {
