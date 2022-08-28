@@ -29,7 +29,10 @@ export class BytesFormat {
   private _dataview: DataView;
   private _littleEndian: boolean = false;
 
-  constructor(dataview: DataView) {
+  constructor(dataview: DataView|ArrayBuffer) {
+    if(dataview instanceof ArrayBuffer) {
+      dataview=new DataView(dataview);
+    }
     this._dataview = dataview;
   }
 
@@ -52,6 +55,11 @@ export class BytesFormat {
   get binary(): string {
     let byte = this._dataview.getUint8(this._offset);
     return byte.toString(2).padStart(8, '0');
+  }
+
+  get hex(): string {
+    let byte = this._dataview.getUint8(this._offset);
+    return byte.toString(16).toUpperCase().padStart(2, '0');
   }
 
   get uint8(): string {
@@ -250,3 +258,5 @@ export class ByteArray implements BoyerMooreBytes{
     return this.bytes.at(index);
   }
 }
+
+

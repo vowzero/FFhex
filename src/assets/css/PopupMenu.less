@@ -1,0 +1,46 @@
+.popup-menu {
+  position: absolute;
+  background: #fff;
+  padding: 3px;
+  box-shadow: 0 0 6px 3px rgba(100, 100, 100, 0.3);
+  display: block;
+  visibility: visible;
+  &.hidden{
+    visibility: hidden;
+  }
+  & ul {
+    width: 100%;
+    flex-direction: column;
+  }
+  & li {
+    padding: 0.125em 1rem 0.125em 2rem;
+    line-height: 1.5em;
+    list-style-type: none;
+    cursor: default;
+    & > span:first-child {
+      margin-right: 2em;
+      color: #111;
+      font-size: 0.875rem;
+    }
+    & > span:last-child {
+      color: #666;
+      font-size: 0.75rem;
+      float: right;
+    }
+
+    &:not(.disabled) {
+      &:hover {
+        background-color: #efefef;
+      }
+    }
+
+    &.disabled {
+      & > span:first-child {
+        color: #999;
+      }
+      & > span:last-child {
+        color: #999;
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { FilePage } from "@/components/FilePage";
+import { MessageTip } from "./components/MessageTip";
 
 export enum ByteType {
   binary,
@@ -30,18 +31,17 @@ export class App {
 
   static init() {
     this.hookCall("init");
-
     // close webpage carefully, but it's too annoying...
-    addEventListener(
-      "beforeunload",
-      (e) => {
-        e.returnValue = false;
-        e.stopPropagation();
-        e.preventDefault();
-        return false;
-      },
-      true
-    );
+    // addEventListener(
+    //   "beforeunload",
+    //   (e) => {
+    //     e.returnValue = false;
+    //     e.stopPropagation();
+    //     e.preventDefault();
+    //     return false;
+    //   },
+    //   true
+    // );
   }
 
   static openFile(file: File): FilePage | null {

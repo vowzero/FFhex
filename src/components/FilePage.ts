@@ -1,7 +1,9 @@
 import { App } from "@/app";
 import { ScrollBar } from "@/components/ScrollBar";
-import { calcBytesAlign, throttle } from "@/utils";
+import { BytesFormat, calcBytesAlign, throttle } from "@/utils";
 import "@/assets/css/FilePage.less";
+import { MenuItem, MenuItemStatus, PopupMenu } from "./PopupMenu";
+import { MessageTip } from "./MessageTip";
 
 const template = `
 <div class="editor-line-number"></div>
@@ -20,7 +22,7 @@ export interface Selection {
 export interface FileReadResult {
   offset: number;
   length: number;
-  result: any;
+  result: ArrayBuffer;
 }
 
 export class FilePage {
@@ -43,7 +45,7 @@ export class FilePage {
   private _Scroll!: HTMLDivElement; // Right scroll bar
   private _ScrollBar!: ScrollBar;
   private _lastLineAddress: number = 0; // Last address line number
-  private _mouseDown: boolean = false;
+  private _mouseLeftDown: boolean = false;
   private _userSelection: Selection;
 
   get editorElement() {
@@ -74,7 +76,7 @@ export class FilePage {
   public readFile(offset: number, length: number): Promise<FileReadResult> {
     return new Promise<FileReadResult>((resolve, reject) => {
       const fr = new FileReader();
-      fr.onload = () => resolve({ offset, length, result: fr.result });
+      fr.onload = () => resolve({ offset, length, result: fr.result as ArrayBuffer });
       fr.onerror = reject;
       fr.readAsArrayBuffer(this._inputFile.slice(offset, offset + length));
     });
@@ -161,6 +163,36 @@ export class FilePage {
     }
   }
 
+  public getSelectionBytes(selection: Selection) {
+    const { beginAddress, endAddress } = selection;
+    if (beginAddress < 0 || endAddress >= this.fileTotalBytes) {
+      throw new Error("Invalid selection.");
+    }
+    return this.readFile(beginAddress, endAddress - beginAddress + 1);
+  }
+
+  public userSelectionCopy() {
+    const { beginAddress, endAddress } = this._userSelection;
+    if (endAddress - beginAddress + 1 > 1024) {
+      MessageTip.show({ text: "The Selection is too large." });
+    } else {
+      this.readFile(beginAddress, endAddress - beginAddress + 1).then((frr) => {
+        const bytes = new BytesFormat(frr.result);
+        let data = "";
+        for (let i = 0; i < frr.length - 1; i++) {
+          bytes.offset = i;
+          data += bytes.hex + " ";
+        }
+        bytes.offset = frr.length - 1;
+        data += bytes.hex;
+        navigator.clipboard.writeText(data).then(
+          () => MessageTip.show({ text: "Copy succeed." }),
+          () => MessageTip.show({ text: "Copy failed." })
+        );
+      });
+    }
+  }
+
   public save() {}
 
   public destory() {
@@ -188,19 +220,6 @@ export class FilePage {
     this._HexArea.setAttribute("tabindex", "0");
     this._TextArea.setAttribute("tabindex", "0");
 
-    page.oncontextmenu = (event: MouseEvent) => {
-      const menu = document.querySelector<HTMLDivElement>(".context-menu")!;
-      menu.style.left = event.pageX + "px";
-      menu.style.top = event.pageY + "px";
-      menu.style.display = "block";
-      return false;
-    };
-
-    page.onclick = () => {
-      const menu = document.querySelector<HTMLDivElement>(".context-menu")!;
-      menu.style.display = "none";
-    };
-
     this._ScrollBar = new ScrollBar(this._pageElement, this._Scroll, this._onScroll.bind(this));
 
     this._initKeyControl();
@@ -224,7 +243,6 @@ export class FilePage {
     let aSpan: HTMLSpanElement;
     let i: number;
     let end_addr: number = this.pageBytesCount;
-    let offset: number;
 
     // add line number
     for (i = this.windowOffset; i < end_addr; i += this.eachLineBytes) {
@@ -315,11 +333,31 @@ export class FilePage {
     }
   }
 
+  private _generateContextMenu() {
+    const menuList: MenuItem[] = [
+      { key: "Cut", label: "剪切", handler: this.userSelectionCopy.bind(this), status: MenuItemStatus.INVISIBLE },
+      {
+        key: "Copy",
+        label: "复制",
+        handler: this.userSelectionCopy.bind(this),
+        status: () => {
+          if (0 <= this._userSelection.beginAddress && this._userSelection.endAddress < this.fileTotalBytes)
+            return MenuItemStatus.NORMAL;
+          else return MenuItemStatus.INVISIBLE;
+        },
+      },
+      { key: "Paste", label: "粘贴", handler: this.userSelectionCopy.bind(this), status: MenuItemStatus.INVISIBLE },
+      { key: "Delete", label: "删除", handler: this.userSelectionCopy.bind(this), status: MenuItemStatus.INVISIBLE },
+    ];
+    return menuList;
+  }
+
   private _initKeyControl() {
     this._pageElement.addEventListener("click", this._onPageClick.bind(this));
     this._pageElement.addEventListener("mousemove", throttle(this._onPageMouseMove.bind(this), 10));
-    this._pageElement.addEventListener("mousedown", throttle(this._onPageMouseDown.bind(this), 10));
-    // this._pageElement.addEventListener("mouseup", throttle(this._onPageMouseUp.bind(this), 10));
+    this._pageElement.addEventListener("mousedown", this._onPageMouseDown.bind(this));
+    this._pageElement.addEventListener("contextmenu", this._onPageContextMenu.bind(this));
+
     this._HexArea.addEventListener("keydown", this._onHexAreaKeyDown.bind(this));
     this._TextArea.addEventListener("keydown", this._onTextAreaKeyDown.bind(this));
   }
@@ -331,6 +369,7 @@ export class FilePage {
       this.setCursor(address);
       App.hookCall("afterByteClick", this, address, this._fileArrayBuffer);
     }
+    PopupMenu.hidden();
   }
 
   private _onPageMouseMove(event: MouseEvent) {
@@ -338,10 +377,10 @@ export class FilePage {
     if (this.__isHexOrTextUnit(target)) {
       let offset = parseInt(target.dataset["offset"]!);
       this._updateOffsetClass(offset, "hover");
-      if (this._mouseDown) {
+      if (this._mouseLeftDown) {
         let newSelectionEndAddress = this.windowOffset + offset;
         if (newSelectionEndAddress !== this._userSelection.endAddress) {
-          if(!(newSelectionEndAddress<this.fileTotalBytes))newSelectionEndAddress=this.fileTotalBytes-1;
+          if (!(newSelectionEndAddress < this.fileTotalBytes)) newSelectionEndAddress = this.fileTotalBytes - 1;
           this._userSelection.endAddress = newSelectionEndAddress;
           this.updateSelection(this._userSelection);
         }
@@ -351,45 +390,54 @@ export class FilePage {
     }
   }
 
-  private _onPageMouseMoveUserSelection({y}: MouseEvent) {
-    const {top,bottom}=this._pageElement.getBoundingClientRect();
+  private _onPageMouseMoveUserSelection({ y }: MouseEvent) {
+    const { top, bottom } = this._pageElement.getBoundingClientRect();
     let dealt;
-    if(top+20<y&&y<bottom-20){
+    if (top + 20 < y && y < bottom - 20) {
       return;
-    }else{
-      if(y<=top+20){
-        dealt=-(top+20-y);
-      }else{
-        dealt=y-bottom+20;
+    } else {
+      if (y <= top + 20) {
+        dealt = -(top + 20 - y);
+      } else {
+        dealt = y - bottom + 20;
       }
-      if(dealt<-20)dealt=-20;
-      if(dealt>20)dealt=20;
+      if (dealt < -20) dealt = -20;
+      if (dealt > 20) dealt = 20;
 
-      this.seekWindowOffset(calcBytesAlign(Math.floor((dealt^2)/8000*this._lastLineAddress),this.eachLineBytes) +this.windowOffset);
+      this.seekWindowOffset(
+        calcBytesAlign(Math.floor(((dealt ^ 2) / 8000) * this._lastLineAddress), this.eachLineBytes) + this.windowOffset
+      );
     }
   }
 
   private _onPageMouseDown(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    if (this.__isHexOrTextUnit(target)) {
-      let address = this.windowOffset + parseInt(target.dataset["offset"]!);
-      if (address>this.fileTotalBytes)return; // ".." can't be selected
-      this._userSelection.beginAddress = this._userSelection.endAddress = address;
-      this._userSelection.viaible = true;
-      const onMove = throttle(this._onPageMouseMoveUserSelection.bind(this), 10);
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", () => {
-        window.removeEventListener("mousemove", onMove);
-        this._mouseDown = false;
-      });
-      this.updateSelection(this._userSelection);
+    // left button of mouse
+    if (event.button === 0) {
+      const target = event.target as HTMLElement;
+      if (this.__isHexOrTextUnit(target)) {
+        let address = this.windowOffset + parseInt(target.dataset["offset"]!);
+        if (address > this.fileTotalBytes) return; // ".." can't be selected
+        this._userSelection.beginAddress = this._userSelection.endAddress = address;
+        this._userSelection.viaible = true;
+        const onMove = throttle(this._onPageMouseMoveUserSelection.bind(this), 10);
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", () => {
+          window.removeEventListener("mousemove", onMove);
+          this._mouseLeftDown = false;
+        });
+        this.updateSelection(this._userSelection);
+      }
+      this._mouseLeftDown = true;
+      document.addEventListener("mouseup", throttle(this._onPageMouseUp.bind(this), 10), { once: true });
     }
-    this._mouseDown = true;
-    document.addEventListener("mouseup", throttle(this._onPageMouseUp.bind(this), 10), { once: true });
   }
 
-  private _onPageMouseUp(event: MouseEvent) {
+  private _onPageMouseUp(_event: MouseEvent) {}
 
+  private _onPageContextMenu(event: MouseEvent) {
+    PopupMenu.show(this._generateContextMenu(), event.pageX, event.pageY);
+    event.preventDefault();
+    return false;
   }
 
   private __isHexOrTextUnit(target: HTMLElement): boolean {

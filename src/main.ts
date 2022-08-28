@@ -5,7 +5,6 @@ import { setupSearch } from '@/components/Search';
 import { App } from '@/app';
 import { WelcomePage } from '@/components/WelcomePage';
 import 'default-passive-events';
-import '@/assets/css/style.less'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="editor-container">
@@ -22,14 +21,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
   <div class="sidebar"></div>
 </div>
-<div class="context-menu" style="display:none">
-  <ul>
-    <li>menu item</li>
-    <li>123</li>
-    <li>123</li>
-    <li>123</li>
-  </ul>
-</div>
+
 <input id="select-file" name="select-file" type="file" hidden/>
 `;
 

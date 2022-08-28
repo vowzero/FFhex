@@ -3,6 +3,7 @@ import { FilePage } from "@/components/FilePage";
 import { SVG_openFile, SVG_closeFile, SVG_templateLib, SVG_search, SVG_help } from "./Icon";
 import { newTabButton, newTabContent,tabDestoryCurrent,activeTab } from "./Tab";
 import "../assets/css/ToolBar.less";
+import { MessageTip } from "./MessageTip";
 
 const template=`
 <ul>
@@ -23,18 +24,15 @@ function closeFile() {
 }
 
 function templateLib() {
-  alert("制作中……");
-  console.log('模板库');
+  MessageTip.show({text:"Template matching in future plans"});
 }
 
 function search() {
-  alert("制作中……");
-  console.log('搜索');
+  MessageTip.show({text:"Search Window in future plans"});
 }
 
 function help() {
-  alert("制作中……");
-  console.log('帮助');
+  MessageTip.show({text:"Help Window in future plans"});
 }
 
 function addFileTab(file:File){
