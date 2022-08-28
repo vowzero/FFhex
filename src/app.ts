@@ -44,13 +44,13 @@ export class App {
     // );
   }
 
-  static openFile(file: File): FilePage | null {
+  static openFile(file: File, filePath?: string): FilePage | null {
     let filePage: FilePage;
-    if (this.isReopenFile(file)) {
-      console.error("Reopen file");
+    if (this.isReopenFile(file, filePath)) {
+      MessageTip.show({ text: "Reopen file." });
       return null;
     } else {
-      filePage = new FilePage(this.pageIndex, file);
+      filePage = new FilePage(this.pageIndex, file, filePath);
       this.pool.push(filePage);
       this.pageCount++;
       this.pageIndex++;
@@ -73,8 +73,15 @@ export class App {
     this.hookCall("afterSwitchPage", this.currentPage);
   }
 
-  private static isReopenFile(file: File): boolean {
-    return this.pool.filter((page) => page.currentFile === file).length > 0;
+  private static isReopenFile(file: File, filePath?: string): boolean {
+    return (
+      this.pool.find(
+        (page) =>
+          page.filePath === filePath &&
+          file.size === page.currentFile.size &&
+          file.lastModified === page.currentFile.lastModified
+      ) !== undefined
+    );
   }
 
   static hookRegister(hookName: string, hookFn: any) {

@@ -37,6 +37,7 @@ export class FilePage {
   public fileTotalBytes: number = 0; // File bytes size
   public offsetAddressMaxLength: number = 8; // Each address pads max length
   private _inputFile!: File; // Which file is opened
+  private _filePath?: string; // input file path
   private _fileArrayBuffer!: ArrayBuffer; // Window bytes ArrayBuffer
   private _pageElement!: HTMLDivElement; // The top layer container element
   private _LineNumber!: HTMLDivElement; // Left address line number
@@ -60,17 +61,18 @@ export class FilePage {
     return this._inputFile;
   }
 
-  constructor(id: number, file: File) {
+  get filePath(){return this._filePath;}
+
+  constructor(id: number, file: File,filePath?: string) {
     this.fileID = id;
     this.pageBytesCount = this.eachLineBytes * this.pageMaxLine;
     this._inputFile = file;
+    this._filePath = filePath;
     this.fileTotalBytes = file.size;
     this.offsetAddressMaxLength = Math.max(8, Math.ceil(Math.log(file.size) / Math.log(16)));
     this._lastLineAddress = calcBytesAlign(this.fileTotalBytes, this.eachLineBytes);
     this._userSelection = { viaible: false, style: "selected", beginAddress: -1, endAddress: -1 };
     this._initEditorPage();
-    this._adjustEditorPage();
-    this.seekWindowOffset(0);
   }
 
   public readFile(offset: number, length: number): Promise<FileReadResult> {
@@ -220,6 +222,17 @@ export class FilePage {
     this._HexArea.setAttribute("tabindex", "0");
     this._TextArea.setAttribute("tabindex", "0");
 
+    let observer = new ResizeObserver(throttle(([e]:ResizeObserverEntry[]) => {
+      if (!this._inputFile) {
+        observer.disconnect();
+        observer = null!;
+      } else if ((e.target as HTMLElement).style.display !== "none") {
+        this._adjustEditorPage();
+        this.seekWindowOffset(this.windowOffset);
+      }
+    },10));
+    observer.observe(page);
+
     this._ScrollBar = new ScrollBar(this._pageElement, this._Scroll, this._onScroll.bind(this));
 
     this._initKeyControl();
@@ -229,41 +242,37 @@ export class FilePage {
    * adjust editor page viewer elements, clear base element and regenerate them
    */
   private _adjustEditorPage() {
-    this._LineNumber.innerHTML = "";
-    this._HexArea.innerHTML = "";
-    this._TextArea.innerHTML = "";
-
-    // TODO: EventListener parent
-
     // calc max line number
     this.pageMaxLine = Math.floor(this._HexArea.getBoundingClientRect().height / 26);
     this.pageBytesCount = this.pageMaxLine * this.eachLineBytes;
 
-    let aDiv: HTMLDivElement;
-    let aSpan: HTMLSpanElement;
     let i: number;
-    let end_addr: number = this.pageBytesCount;
+    let length: number = this.pageBytesCount;
 
     // add line number
-    for (i = this.windowOffset; i < end_addr; i += this.eachLineBytes) {
-      aDiv = document.createElement("div");
-      aDiv.dataset["offset"] = i.toString();
-      aDiv.textContent = "";
-      this._LineNumber?.appendChild(aDiv);
+    for (i = this._LineNumber.children.length; i < this.pageMaxLine; i ++) {
+      const unit = document.createElement("div");
+      unit.dataset["offset"] = i.toString();
+      this._LineNumber.appendChild(unit);
     }
+
+    for(i=this._LineNumber.children.length-1;i>=length;i--)this._LineNumber.children[i].remove();
 
     // add byte span
-    for (i = this.windowOffset; i < end_addr; i++) {
-      aSpan = document.createElement("span");
-      aSpan.dataset["offset"] = i.toString();
-      this._HexArea?.appendChild(aSpan);
+    for (i = this._HexArea.children.length; i < length; i++) {
+      const unit = document.createElement("span");
+      unit.dataset["offset"] = i.toString();
+      this._HexArea.appendChild(unit);
     }
+    for(i=this._HexArea.children.length-1;i>=length;i--)this._HexArea.children[i].remove();
 
-    for (i = this.windowOffset; i < end_addr; i++) {
-      aSpan = document.createElement("span");
-      aSpan.dataset["offset"] = i.toString();
-      this._TextArea?.appendChild(aSpan);
+    for (i = this._TextArea.children.length; i < length; i++) {
+      const unit = document.createElement("span");
+      unit.dataset["offset"] = i.toString();
+      this._TextArea.appendChild(unit);
     }
+    for(i=this._TextArea.children.length-1;i>=length;i--)this._TextArea.children[i].remove();
+
   }
 
   private _updateEditorPage() {
