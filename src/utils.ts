@@ -1,5 +1,11 @@
 import { BoyerMooreBytes } from "@/modules/Boyer-Moore";
 
+export interface FileReadResult {
+  offset: number;
+  length: number;
+  result: ArrayBuffer;
+}
+
 /**
  * quickly to throttle even in event
  */
@@ -259,4 +265,12 @@ export class ByteArray implements BoyerMooreBytes{
   }
 }
 
+export const readFileSlice=(file:Blob,offset: number, length: number): Promise<FileReadResult>=>{
+  return new Promise<FileReadResult>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve({ offset, length, result: fr.result as ArrayBuffer });
+    fr.onerror = reject;
+    fr.readAsArrayBuffer(file.slice(offset, offset + length));
+  });
+}
 

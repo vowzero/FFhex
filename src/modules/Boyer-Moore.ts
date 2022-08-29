@@ -5,7 +5,7 @@ export interface BoyerMooreBytes {
 }
 
 // Boyer Moore String Matching Algorithm (Bytes Version)
-export function boyerMoore<T extends BoyerMooreBytes>(_src: T, pattern: T): Array<number> {
+export default function boyerMoore<T extends BoyerMooreBytes>(_src: T, pattern: T): Array<number> {
   let bc: Array<number> = makeBadCharacter(pattern);
   let gs: Array<number> = makeGoodSuffix(pattern);
   let i:number = 0,j:number;

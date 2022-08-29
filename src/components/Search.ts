@@ -5,6 +5,7 @@ import { folded } from "@/components/Icon";
 import { ByteArray, calcBytesAlign } from "@/utils";
 import { ScrollBar } from "@/components/ScrollBar";
 import "@/assets/css/Search.less";
+import  WorkerPool  from "@/modules/WorkerPool";
 
 const template = `
 <div class="search module-container">
@@ -37,7 +38,7 @@ const template = `
       <button type="button">查找全部</button>
     </div>
     <div class="search-progress" style="display:none;"><div class="search-progress-inner"></div></div>
-    <div class="search-results" style="display:none;"><div>搜索结果：</div><ul></ul></div>
+    <div class="search-results"><div>搜索结果：</div><ul></ul></div>
   </div>
 </div>
 `;
@@ -47,19 +48,14 @@ interface SearchConfig {
   type: ByteType;
 }
 
-interface SearchResultItem {
-  offset: number;
-  length: number;
-  type: ByteType;
-}
-
 interface SearchFilePage {
   fileID: number;
   filePage: FilePage;
   toSearch: string;
   config?: SearchConfig;
-  results: SearchResultItem[];
+  results: number[];
   offsetResult: number;
+  length:number;
 }
 
 interface ToSearchBytes {
@@ -73,25 +69,21 @@ interface OffsetArea {
   upper: number;
 }
 
+const workerPool = new WorkerPool(new URL("../searchFile.ts", import.meta.url));
 let searchElement: HTMLElement;
 let searchInputElement: HTMLInputElement;
 let searchResultsElement: HTMLInputElement;
 let searchFiles: SearchFilePage[] = [];
 let currentSearchFP: SearchFilePage | null;
-let workerIndex: number = 0;
-let workerPools: Map<number, Worker> = new Map();
 
 function closeHighlight() {
   if (!currentSearchFP) return;
-  currentSearchFP.filePage.editorElement
-    .querySelectorAll("span.highlight")
-    .forEach((span) => span.classList.remove("highlight"));
+  currentSearchFP.filePage.editorElement.querySelectorAll("span.highlight").forEach((span) => span.classList.remove("highlight"));
 }
 
 function openHighlight() {
   if (!currentSearchFP) return;
-  const { windowOffset, pageBytesCount, editorElement } =
-    currentSearchFP.filePage;
+  const { windowOffset, pageBytesCount, editorElement } = currentSearchFP.filePage;
   let hexArea = editorElement.querySelector(".editor-hex-area")!;
   let textArea = editorElement.querySelector(".editor-text-area")!;
   const region: OffsetArea = {
@@ -99,9 +91,9 @@ function openHighlight() {
     upper: windowOffset + pageBytesCount,
   };
   let childOffset: number;
-  currentSearchFP.results.forEach(({ offset, length }) => {
+  currentSearchFP.results.forEach( offset => {
     if (region.lower <= offset) {
-      for (let i = 0; i < length; ++i) {
+      for (let i = 0; i < currentSearchFP!.length; ++i) {
         if (offset + i < region.upper) {
           childOffset = offset + i - windowOffset;
           hexArea.children[childOffset].classList.add("highlight");
@@ -122,9 +114,7 @@ function updateHighlight() {
 function createEmptyConfig(): SearchConfig {
   return {
     hightlight: true,
-    type: parseInt(
-      (document.querySelector("[name=search-type]")! as HTMLSelectElement).value
-    ) as unknown as ByteType,
+    type: parseInt((document.querySelector("[name=search-type]")! as HTMLSelectElement).value) as unknown as ByteType,
   } as SearchConfig;
 }
 
@@ -135,10 +125,7 @@ function makeArrayBuffer(bytes: number[]): ArrayBuffer {
   return buffer;
 }
 
-function searchValueToBytes(
-  toSeach: string,
-  config: SearchConfig
-): ToSearchBytes {
+function searchValueToBytes(toSeach: string, config: SearchConfig): ToSearchBytes {
   let asType;
   let bytesArray: number[] = [];
   let result: ToSearchBytes;
@@ -164,11 +151,7 @@ function searchValueToBytes(
       break;
     default:
     case ByteType.binary:
-      asType = toSeach
-        .slice(0)
-        .toLowerCase()
-        .replace(" ", "")
-        .replace(/[^01]/gi, "");
+      asType = toSeach.slice(0).toLowerCase().replace(" ", "").replace(/[^01]/gi, "");
       asType = asType.padStart(calcBytesAlign(asType.length, 8), "0");
       for (let i = 0; i < asType.length - 1; i += 8) {
         let binStr = asType.slice(i, i + 8);
@@ -199,11 +182,9 @@ function searchInitProgress(total: number) {
 function searchInProgress() {
   if (!currentSearchFP) return;
   ++currentProgress;
-  (searchElement.querySelector('.search-progress') as HTMLElement).style.display='block';
+  (searchElement.querySelector(".search-progress") as HTMLElement).style.display = "block";
   searchResultsElement.children[0].textContent = `${currentSearchFP.results.length} results have been found.`;
-  (
-    searchElement.querySelector(".search-progress-inner")! as HTMLElement
-  ).style.width = `${(currentProgress / totalProgress) * 100}%`;
+  (searchElement.querySelector(".search-progress-inner")! as HTMLElement).style.width = `${(currentProgress / totalProgress) * 100}%`;
   if (currentProgress == totalProgress) {
     searchDoneProgress();
   }
@@ -213,28 +194,10 @@ function searchInProgress() {
 function searchDoneProgress() {
   if (!currentSearchFP) return;
   searchResultsElement.children[0].textContent = `${currentSearchFP.results.length} results have been found.`;
-  (searchElement.querySelector('.search-results') as HTMLElement).style.display='block';
-  currentSearchFP.results.sort((a,b)=>a.offset-b.offset);
+  (searchElement.querySelector(".search-results") as HTMLElement).style.display = "block";
+  currentSearchFP.results.sort((a, b) => a - b);
   resultListSeek(0);
   updateHighlight();
-}
-
-function newWorker(): [number, Worker] {
-  workerIndex++;
-  const worker = new Worker(new URL("../searchFile.ts", import.meta.url), {
-    type: "module",
-  });
-  workerPools.set(workerIndex, worker);
-  console.log("create worker,", workerIndex);
-  return [workerIndex, worker];
-}
-
-function deleteWorker(key: number) {
-  if (workerPools.has(key)) {
-    console.log("delete,", key);
-    workerPools.get(key)!.terminate();
-    workerPools.delete(key);
-  }
 }
 
 function searchAll() {
@@ -246,54 +209,37 @@ function searchAll() {
   const filePage: FilePage = currentSearchFP.filePage;
 
   // create byteArray to search
-  const toSearch = searchValueToBytes(
-    searchInputElement.value,
-    createEmptyConfig()
-  );
+  const toSearch = searchValueToBytes(searchInputElement.value, createEmptyConfig());
   const pattern: ByteArray = new ByteArray(toSearch.buffer);
+  currentSearchFP.length=pattern.length;
 
   // clear current filepage search results
   searchRes.splice(0, searchRes.length);
 
-  // callback for search section
-
   // init search section's offsets
   const searchList: Array<number> = new Array();
-  const bytesEachWindow = 1024 * 1024 * 32; // TODO: the number may not suitable
+  const bytesEachWindow = 1024 * 1024 * 64; // TODO: the number may not suitable
   const eachLength: number = bytesEachWindow + pattern.length - 1;
   for (
-    startOffset = 0, endOffset = bytesEachWindow - 1;
-    endOffset < filePage.fileTotalBytes;
-    startOffset += bytesEachWindow, endOffset += bytesEachWindow
+    startOffset = 0;
+    startOffset <= filePage.fileTotalBytes;
+    startOffset += bytesEachWindow
   ) {
     searchList.push(startOffset);
   }
   if (searchList.length == 0) searchList.push(0);
   // init search progress according to searchList
   searchInitProgress(searchList.length);
-
+  console.log(searchList);
+  // start search
   searchList.forEach((curOffset) => {
-    const [id, worker] = newWorker();
-    worker.addEventListener("message", (e) => {
-      e.data.results.forEach((offset: number) =>
-        searchRes.push({
-          offset: offset + e.data.offset,
-          length: pattern.length,
-          type: ByteType.hex,
-        })
-      );
-      console.log(e);
-      deleteWorker(e.data.id);
-      searchInProgress();
-    });
     if (!currentSearchFP) return;
-    worker.postMessage({
-      command: "search",
-      id: id,
-      file: currentSearchFP.filePage.currentFile,
-      offset: curOffset,
-      length: eachLength,
-      patternBuffer: toSearch.buffer,
+
+    workerPool.execute("search", [currentSearchFP.filePage.currentFile, curOffset, eachLength, toSearch.buffer]).then((data) => {
+      (data.results as number[]).forEach((offset: number) =>
+        searchRes.push(offset + (data.offset as number))
+      );
+      searchInProgress();
     });
   });
 }
@@ -315,6 +261,7 @@ function initSearchResult(file: FilePage) {
     toSearch: "",
     results: [],
     offsetResult: 0,
+    length:0,
   });
 }
 
@@ -327,8 +274,7 @@ function destorySearchResult(file: FilePage) {
 
 function resultListSeek(offset: number) {
   if (!currentSearchFP) return;
-  const listChildren: HTMLCollection =
-    searchResultsElement.getElementsByTagName("ul")[0].children;
+  const listChildren: HTMLCollection = searchResultsElement.getElementsByTagName("ul")[0].children;
   const resultsLength: number = currentSearchFP.results.length;
   let i: number;
   let item: HTMLElement;
@@ -337,11 +283,7 @@ function resultListSeek(offset: number) {
   for (i = 0; i < listChildren.length && i + offset < resultsLength; i++) {
     item = listChildren.item(i) as HTMLElement;
     item.textContent =
-      "0x" +
-      currentSearchFP.results[i + offset].offset
-        .toString(16)
-        .toUpperCase()
-        .padStart(currentSearchFP.filePage.offsetAddressMaxLength, "0");
+      "0x" + currentSearchFP.results[i + offset].toString(16).toUpperCase().padStart(currentSearchFP.filePage.offsetAddressMaxLength, "0");
   }
 
   for (; i < listChildren.length; i++) {
@@ -352,9 +294,7 @@ function resultListSeek(offset: number) {
 
 function onResultScroll(type: number, ratio: number, newRatio?: Function) {
   if (!currentSearchFP) return;
-  let childrenNum =
-    currentSearchFP.results.length -
-    searchResultsElement.getElementsByTagName("ul")[0].children.length;
+  let childrenNum = currentSearchFP.results.length - searchResultsElement.getElementsByTagName("ul")[0].children.length;
   let offset: number;
 
   if (type === ScrollBar.DRAG) {
@@ -388,9 +328,7 @@ export function setupSearch() {
   let ul = searchResultsElement.getElementsByTagName("ul")[0];
 
   ul.addEventListener("click", (ev: MouseEvent) => {
-    const li = ev
-      .composedPath()
-      .find((e) => (e as HTMLElement).tagName === "LI") as HTMLElement;
+    const li = ev.composedPath().find((e) => (e as HTMLElement).tagName === "LI") as HTMLElement;
     const address = parseInt(li.textContent!);
     if (isNaN(address)) return;
     if (!currentSearchFP) return;

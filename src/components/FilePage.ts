@@ -1,6 +1,6 @@
 import { App } from "@/app";
 import { ScrollBar } from "@/components/ScrollBar";
-import { BytesFormat, calcBytesAlign, throttle } from "@/utils";
+import { BytesFormat, calcBytesAlign, FileReadResult, readFileSlice, throttle } from "@/utils";
 import "@/assets/css/FilePage.less";
 import { MenuItem, MenuItemStatus, PopupMenu } from "./PopupMenu";
 import { MessageTip } from "./MessageTip";
@@ -17,12 +17,6 @@ export interface Selection {
   style: string;
   beginAddress: number;
   endAddress: number;
-}
-
-export interface FileReadResult {
-  offset: number;
-  length: number;
-  result: ArrayBuffer;
 }
 
 export class FilePage {
@@ -76,12 +70,7 @@ export class FilePage {
   }
 
   public readFile(offset: number, length: number): Promise<FileReadResult> {
-    return new Promise<FileReadResult>((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => resolve({ offset, length, result: fr.result as ArrayBuffer });
-      fr.onerror = reject;
-      fr.readAsArrayBuffer(this._inputFile.slice(offset, offset + length));
-    });
+    return readFileSlice(this._inputFile,offset,length);
   }
 
   // it will slice the file [windowOffset, windowOffset+bytesCount]

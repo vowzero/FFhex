@@ -60,10 +60,11 @@ export class App {
   }
 
   static closeFile(fileID: number) {
-    const filePage: FilePage = this.pool.find((file) => file.fileID == fileID)!;
-    this.hookCall("beforeCloseFile", filePage);
-    filePage.destory();
+    const index = this.pool.findIndex((file) => file.fileID == fileID)!;
+    this.hookCall("beforeCloseFile", this.pool[index]);
+    this.pool[index].destory();
     this.pageCount--;
+    this.pool.splice(index, 1);
     this.currentPage = null;
   }
 
@@ -76,10 +77,7 @@ export class App {
   private static isReopenFile(file: File, filePath?: string): boolean {
     return (
       this.pool.find(
-        (page) =>
-          page.filePath === filePath &&
-          file.size === page.currentFile.size &&
-          file.lastModified === page.currentFile.lastModified
+        (page) => page.filePath === filePath && file.size === page.currentFile.size && file.lastModified === page.currentFile.lastModified
       ) !== undefined
     );
   }
