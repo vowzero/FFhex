@@ -12,11 +12,22 @@ const template = `
 <div class="editor-scrollbar"></div>
 `;
 
+export interface SelectionStyle {
+  className: string;
+}
+
 export interface Selection {
   viaible: boolean;
   style: string;
   beginAddress: number;
   endAddress: number;
+}
+
+export interface HighightCharOption {
+  label: string;
+  value: any[];
+  style: string;
+  enabled: boolean;
 }
 
 export class FilePage {
@@ -42,6 +53,23 @@ export class FilePage {
   private _lastLineAddress: number = 0; // Last address line number
   private _mouseLeftDown: boolean = false;
   private _userSelection: Selection;
+  private _highlightCharOption: HighightCharOption[] = [
+    { label: "Space", value: [32], style: "space", enabled: true },
+    { label: "CR/LF", value: [10, 13], style: "crlf", enabled: true },
+    { label: "Display ASCII", value: [[32, 126]], style: "display", enabled: true },
+    { label: "Number ASCII", value: [[48, 57]], style: "number", enabled: true },
+    {
+      label: "Alhabet ASCII",
+      value: [
+        [65, 90],
+        [97, 122],
+      ],
+      style: "alphabet",
+      enabled: true,
+    },
+    { label: "Control ASCII", value: [[0, 31], 127], style: "control", enabled: true },
+    { label: "Non-ASCII", value: [[128, 255]], style: "non-ascii", enabled: false },
+  ];
 
   get editorElement() {
     return this._pageElement;
@@ -55,9 +83,11 @@ export class FilePage {
     return this._inputFile;
   }
 
-  get filePath(){return this._filePath;}
+  get filePath() {
+    return this._filePath;
+  }
 
-  constructor(id: number, file: File,filePath?: string) {
+  constructor(id: number, file: File, filePath?: string) {
     this.fileID = id;
     this.pageBytesCount = this.eachLineBytes * this.pageMaxLine;
     this._inputFile = file;
@@ -70,7 +100,7 @@ export class FilePage {
   }
 
   public readFile(offset: number, length: number): Promise<FileReadResult> {
-    return readFileSlice(this._inputFile,offset,length);
+    return readFileSlice(this._inputFile, offset, length);
   }
 
   // it will slice the file [windowOffset, windowOffset+bytesCount]
@@ -211,15 +241,17 @@ export class FilePage {
     this._HexArea.setAttribute("tabindex", "0");
     this._TextArea.setAttribute("tabindex", "0");
 
-    let observer = new ResizeObserver(throttle(([e]:ResizeObserverEntry[]) => {
-      if (!this._inputFile) {
-        observer.disconnect();
-        observer = null!;
-      } else if ((e.target as HTMLElement).style.display !== "none") {
-        this._adjustEditorPage();
-        this.seekWindowOffset(this.windowOffset);
-      }
-    },10));
+    let observer = new ResizeObserver(
+      throttle(([e]: ResizeObserverEntry[]) => {
+        if (!this._inputFile) {
+          observer.disconnect();
+          observer = null!;
+        } else if ((e.target as HTMLElement).style.display !== "none") {
+          this._adjustEditorPage();
+          this.seekWindowOffset(this.windowOffset);
+        }
+      }, 10)
+    );
     observer.observe(page);
 
     this._ScrollBar = new ScrollBar(this._pageElement, this._Scroll, this._onScroll.bind(this));
@@ -239,13 +271,13 @@ export class FilePage {
     let length: number = this.pageBytesCount;
 
     // add line number
-    for (i = this._LineNumber.children.length; i < this.pageMaxLine; i ++) {
+    for (i = this._LineNumber.children.length; i < this.pageMaxLine; i++) {
       const unit = document.createElement("div");
       unit.dataset["offset"] = i.toString();
       this._LineNumber.appendChild(unit);
     }
 
-    for(i=this._LineNumber.children.length-1;i>=length;i--)this._LineNumber.children[i].remove();
+    for (i = this._LineNumber.children.length - 1; i >= length; i--) this._LineNumber.children[i].remove();
 
     // add byte span
     for (i = this._HexArea.children.length; i < length; i++) {
@@ -253,15 +285,14 @@ export class FilePage {
       unit.dataset["offset"] = i.toString();
       this._HexArea.appendChild(unit);
     }
-    for(i=this._HexArea.children.length-1;i>=length;i--)this._HexArea.children[i].remove();
+    for (i = this._HexArea.children.length - 1; i >= length; i--) this._HexArea.children[i].remove();
 
     for (i = this._TextArea.children.length; i < length; i++) {
       const unit = document.createElement("span");
       unit.dataset["offset"] = i.toString();
       this._TextArea.appendChild(unit);
     }
-    for(i=this._TextArea.children.length-1;i>=length;i--)this._TextArea.children[i].remove();
-
+    for (i = this._TextArea.children.length - 1; i >= length; i--) this._TextArea.children[i].remove();
   }
 
   private _updateEditorPage() {
@@ -271,17 +302,38 @@ export class FilePage {
     for (i = 0, end = this._LineNumber.childElementCount; i < end; i++) {
       aSpan = this._LineNumber.children.item(i) as HTMLSpanElement;
       offset = parseInt(aSpan.dataset["offset"]!);
-      aSpan.textContent =
-        (this.windowOffset + offset).toString(16).toUpperCase().padStart(this.offsetAddressMaxLength, "0") + ":";
+      aSpan.textContent = (this.windowOffset + offset).toString(16).toUpperCase().padStart(this.offsetAddressMaxLength, "0") + ":";
     }
     const bytesCount: number = this.pageMaxLine * this.eachLineBytes;
     const dataview: DataView = new DataView(this._fileArrayBuffer);
+    let ascii_code: number, ascii: string;
 
-    // show hex bytes and don't need consider the bytesCount in line
+    // show hex bytes and their text and don't need consider the bytesCount in line
     for (i = 0; i < dataview.byteLength; i++) {
+      let className = "";
+      let ubyte = dataview.getUint8(i);
+      for (let option of this._highlightCharOption) {
+        if (option.enabled) {
+          for (let chars of option.value) {
+            if (chars instanceof Array) {
+              if (chars[0] <= ubyte && ubyte <= chars[1]) className += " highlight-char-" + option.style;
+            } else {
+              if (chars === ubyte) className += " highlight-char-" + option.style;
+            }
+          }
+        }
+      }
       aSpan = this._HexArea.children.item(i) as HTMLSpanElement;
       offset = parseInt(aSpan.dataset["offset"]!);
-      aSpan.textContent = dataview.getUint8(i).toString(16).toUpperCase().padStart(2, "0");
+      aSpan.textContent = ubyte.toString(16).toUpperCase().padStart(2, "0");
+      aSpan.className = className;
+
+      aSpan = this._TextArea.children.item(i) as HTMLSpanElement;
+      offset = parseInt(aSpan.dataset["offset"]!);
+      ascii_code = ubyte;
+      ascii = String.fromCharCode(ascii_code);
+      aSpan.textContent = ascii_code >= 32 && ascii_code <= 126 ? ascii : ".";
+      aSpan.className = className;
     }
 
     // when there is any null bytes
@@ -289,23 +341,6 @@ export class FilePage {
       for (i = dataview.byteLength; i < bytesCount; i++) {
         aSpan = this._HexArea.children.item(i) as HTMLSpanElement;
         aSpan.textContent = "..";
-      }
-    }
-
-    // now,it has implemented display of ascii
-    // TODO: utf-8 and any other encoding
-    let ascii_code: number, ascii: string;
-    for (i = 0; i < dataview.byteLength; i++) {
-      aSpan = this._TextArea.children.item(i) as HTMLSpanElement;
-      offset = parseInt(aSpan.dataset["offset"]!);
-      ascii_code = dataview.getUint8(i);
-      ascii = String.fromCharCode(ascii_code);
-      aSpan.textContent = ascii_code >= 32 && ascii_code <= 126 ? ascii : ".";
-    }
-
-    // when there is any null characters
-    if (dataview.byteLength < bytesCount) {
-      for (i = dataview.byteLength; i < bytesCount; i++) {
         aSpan = this._TextArea.children.item(i) as HTMLSpanElement;
         aSpan.textContent = ".";
       }
@@ -318,14 +353,13 @@ export class FilePage {
     this.updateSelection(this._userSelection);
   }
 
-  private _updateOffsetClass(offset: number | null, classname: string) {
+  private _updateOffsetClass(offset: number | null | boolean, classname: string) {
     // old elements with className
     let cursorElements = Array.from(this._pageElement.getElementsByClassName(classname));
     // if old offset is equal to new offset, then do nothing
-    if (cursorElements.length > 0 && (cursorElements[0] as HTMLElement).dataset["offset"] === offset?.toString())
-      return;
+    if (cursorElements.length > 0 && (cursorElements[0] as HTMLElement).dataset["offset"] === offset?.toString()) return;
     for (let element of cursorElements) element.classList.remove(classname);
-    if (offset !== null && offset >= 0) {
+    if (offset !== null && offset !== false && offset >= 0) {
       cursorElements = Array.from(this._pageElement.querySelectorAll(`[data-offset="${offset}"]`));
       for (let element of cursorElements) element.classList.add(classname);
     }
@@ -339,8 +373,7 @@ export class FilePage {
         label: "复制",
         handler: this.userSelectionCopy.bind(this),
         status: () => {
-          if (0 <= this._userSelection.beginAddress && this._userSelection.endAddress < this.fileTotalBytes)
-            return MenuItemStatus.NORMAL;
+          if (0 <= this._userSelection.beginAddress && this._userSelection.endAddress < this.fileTotalBytes) return MenuItemStatus.NORMAL;
           else return MenuItemStatus.INVISIBLE;
         },
       },
@@ -402,9 +435,7 @@ export class FilePage {
       if (dealt < -20) dealt = -20;
       if (dealt > 20) dealt = 20;
 
-      this.seekWindowOffset(
-        calcBytesAlign(Math.floor(((dealt ^ 2) / 8000) * this._lastLineAddress), this.eachLineBytes) + this.windowOffset
-      );
+      this.seekWindowOffset(calcBytesAlign(Math.floor(((dealt ^ 2) / 8000) * this._lastLineAddress), this.eachLineBytes) + this.windowOffset);
     }
   }
 
@@ -439,9 +470,7 @@ export class FilePage {
   }
 
   private __isHexOrTextUnit(target: HTMLElement): boolean {
-    return (
-      target.tagName === "SPAN" && (target.parentElement === this._HexArea || target.parentElement === this._TextArea)
-    );
+    return target.tagName === "SPAN" && (target.parentElement === this._HexArea || target.parentElement === this._TextArea);
   }
 
   private _onHexAreaKeyDown(event: KeyboardEvent) {

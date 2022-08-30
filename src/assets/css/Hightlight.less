@@ -1,0 +1,71 @@
+
+.editor-hex-area span,
+.editor-text-area span {
+  &.highlight-char-control{
+    background: red;
+  }
+  &.highlight-char-crlf{
+    background: blue;
+  }
+  &.highlight-char-display{
+    background: green;
+  }
+  &.highlight-char-space{
+    background: grey;
+  }
+  &.highlight-char-number{
+    background: pink;
+  }
+  &.highlight-char-alpha{
+    background: purple;
+  }
+  &.highlight-char-non-ascii{
+    background: black;
+    color: white;
+  }
+}
+
+.editor-hex-area,.editor-text-area{
+  @border:1px solid rgba(129,195,251,1);
+  & span {
+    &.selected:nth-child(16n),
+    &.selected-end {
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+      border-right: @border;
+      padding-right: 2px;
+    }
+
+    &.selected {
+      border-top: @border;
+      border-bottom:@border;
+      background-color: #ff9a3b21;
+    }
+
+    &.selected:nth-child(16n + 1),
+    &.selected-begin {
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+      border-left: @border;
+      padding-left: 2px;
+    }
+  }
+}
+
+.editor-hex-area span.hover,
+.editor-text-area span.hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  &:not(.selected) {
+    border-radius: 4px;
+  }
+}
+
+.editor-hex-area span.cursor,
+.editor-text-area span.cursor {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.5);
+  &:not(.selected) {
+    border-radius: 4px;
+  }
+}
+

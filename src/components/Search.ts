@@ -5,7 +5,8 @@ import { folded } from "@/components/Icon";
 import { ByteArray, calcBytesAlign } from "@/utils";
 import { ScrollBar } from "@/components/ScrollBar";
 import "@/assets/css/Search.less";
-import  WorkerPool  from "@/modules/WorkerPool";
+import WorkerPool from "@/modules/WorkerPool";
+import { MessageTip } from "./MessageTip";
 
 const template = `
 <div class="search module-container">
@@ -55,7 +56,7 @@ interface SearchFilePage {
   config?: SearchConfig;
   results: number[];
   offsetResult: number;
-  length:number;
+  length: number;
 }
 
 interface ToSearchBytes {
@@ -91,7 +92,7 @@ function openHighlight() {
     upper: windowOffset + pageBytesCount,
   };
   let childOffset: number;
-  currentSearchFP.results.forEach( offset => {
+  currentSearchFP.results.forEach((offset) => {
     if (region.lower <= offset) {
       for (let i = 0; i < currentSearchFP!.length; ++i) {
         if (offset + i < region.upper) {
@@ -201,17 +202,23 @@ function searchDoneProgress() {
 }
 
 function searchAll() {
-  if (!currentSearchFP) return;
+  if (!currentSearchFP) {
+    MessageTip.show({ text: "Please valid file page." });
+    return;
+  }
   const searchRes = currentSearchFP.results;
   let startOffset: number;
-  let endOffset: number;
 
   const filePage: FilePage = currentSearchFP.filePage;
 
   // create byteArray to search
   const toSearch = searchValueToBytes(searchInputElement.value, createEmptyConfig());
   const pattern: ByteArray = new ByteArray(toSearch.buffer);
-  currentSearchFP.length=pattern.length;
+  currentSearchFP.length = pattern.length;
+  if (currentSearchFP.length === 0) {
+    MessageTip.show({ text: "Please input text to search." });
+    return;
+  }
 
   // clear current filepage search results
   searchRes.splice(0, searchRes.length);
@@ -220,11 +227,7 @@ function searchAll() {
   const searchList: Array<number> = new Array();
   const bytesEachWindow = 1024 * 1024 * 64; // TODO: the number may not suitable
   const eachLength: number = bytesEachWindow + pattern.length - 1;
-  for (
-    startOffset = 0;
-    startOffset <= filePage.fileTotalBytes;
-    startOffset += bytesEachWindow
-  ) {
+  for (startOffset = 0; startOffset <= filePage.fileTotalBytes; startOffset += bytesEachWindow) {
     searchList.push(startOffset);
   }
   if (searchList.length == 0) searchList.push(0);
@@ -236,9 +239,7 @@ function searchAll() {
     if (!currentSearchFP) return;
 
     workerPool.execute("search", [currentSearchFP.filePage.currentFile, curOffset, eachLength, toSearch.buffer]).then((data) => {
-      (data.results as number[]).forEach((offset: number) =>
-        searchRes.push(offset + (data.offset as number))
-      );
+      (data.results as number[]).forEach((offset: number) => searchRes.push(offset + (data.offset as number)));
       searchInProgress();
     });
   });
@@ -261,7 +262,7 @@ function initSearchResult(file: FilePage) {
     toSearch: "",
     results: [],
     offsetResult: 0,
-    length:0,
+    length: 0,
   });
 }
 
@@ -329,7 +330,8 @@ export function setupSearch() {
 
   ul.addEventListener("click", (ev: MouseEvent) => {
     const li = ev.composedPath().find((e) => (e as HTMLElement).tagName === "LI") as HTMLElement;
-    const address = parseInt(li.textContent!);
+    if (!li.textContent || li.textContent.length === 0) return;
+    const address = parseInt(li.textContent);
     if (isNaN(address)) return;
     if (!currentSearchFP) return;
     currentSearchFP.filePage.seekAddress(address);
