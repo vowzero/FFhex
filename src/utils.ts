@@ -1,10 +1,4 @@
-import { BoyerMooreBytes } from "@/modules/Boyer-Moore";
-
-export interface FileReadResult {
-  offset: number;
-  length: number;
-  result: ArrayBuffer;
-}
+import { FileReadResult } from "./modules/IO";
 
 /**
  * quickly to throttle even in event
@@ -252,17 +246,11 @@ export class BytesFormat {
 /**
  * A wrapper function makes ArrayBuffer have the same "at" function as the basic type
  */
-export class ByteArray implements BoyerMooreBytes{
-  private bytes: Uint8Array;
+export class ByteArray extends Uint8Array{
   constructor(arrbuf: ArrayBuffer) {
-    this.bytes = new Uint8Array(arrbuf);
+    super(arrbuf);
   }
 
-  get length(): number { return this.bytes.length; }
-
-  public at(index: number) {
-    return this.bytes.at(index);
-  }
 }
 
 export const readFileSlice=(file:Blob,offset: number, length: number): Promise<FileReadResult>=>{

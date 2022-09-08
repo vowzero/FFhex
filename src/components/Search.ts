@@ -1,12 +1,12 @@
 import { App, ByteType } from "@/app";
 import { VirtualList } from "@/components/VirtualList";
-import { FilePage } from "@/components/FilePage";
+import { CustomSelection, CustomSelectionType, EditorPage } from "@/components/EditorPage";
 import { folded } from "@/components/Icon";
 import { ByteArray, calcBytesAlign } from "@/utils";
 import { ScrollBar } from "@/components/ScrollBar";
-import "@/assets/css/Search.less";
 import WorkerPool from "@/modules/WorkerPool";
 import { MessageTip } from "./MessageTip";
+import "@/assets/css/Search.less";
 
 const template = `
 <div class="search module-container">
@@ -44,79 +44,164 @@ const template = `
 </div>
 `;
 
-interface SearchConfig {
-  hightlight: boolean;
-  type: ByteType;
-}
-
-interface SearchFilePage {
-  fileID: number;
-  filePage: FilePage;
-  toSearch: string;
-  config?: SearchConfig;
-  results: number[];
-  offsetResult: number;
-  length: number;
-}
-
 interface ToSearchBytes {
   type: ByteType;
-  origin: string;
+  originText: string;
+  typeText: string;
   buffer: ArrayBuffer;
-}
-
-interface OffsetArea {
-  lower: number;
-  upper: number;
 }
 
 const workerPool = new WorkerPool(new URL("../searchFile.ts", import.meta.url));
 let searchElement: HTMLElement;
 let searchInputElement: HTMLInputElement;
 let searchResultsElement: HTMLInputElement;
-let searchFiles: SearchFilePage[] = [];
-let currentSearchFP: SearchFilePage | null;
+let currentProgress: number;
+let totalProgress: number;
 
-function closeHighlight() {
-  if (!currentSearchFP) return;
-  currentSearchFP.filePage.editorElement.querySelectorAll("span.highlight").forEach((span) => span.classList.remove("highlight"));
-}
+const searches: Search[] = [];
+let currentSearchFP: Search | null;
 
-function openHighlight() {
-  if (!currentSearchFP) return;
-  const { windowOffset, pageBytesCount, editorElement } = currentSearchFP.filePage;
-  let hexArea = editorElement.querySelector(".editor-hex-area")!;
-  let textArea = editorElement.querySelector(".editor-text-area")!;
-  const region: OffsetArea = {
-    lower: windowOffset,
-    upper: windowOffset + pageBytesCount,
-  };
-  let childOffset: number;
-  currentSearchFP.results.forEach((offset) => {
-    if (region.lower <= offset) {
-      for (let i = 0; i < currentSearchFP!.length; ++i) {
-        if (offset + i < region.upper) {
-          childOffset = offset + i - windowOffset;
-          hexArea.children[childOffset].classList.add("highlight");
-          textArea.children[childOffset].classList.add("highlight");
-        }
-      }
-    }
-  });
-}
-
-function updateHighlight() {
-  closeHighlight();
-  if (searchFiles !== null && searchFiles.length > 0) {
-    openHighlight();
+class Search {
+  private _filePage: EditorPage;
+  private toSearch!: ToSearchBytes;
+  private results: number[] = [];
+  private offsetResult: number = 0;
+  private highlight: boolean = true;
+  private length: number = -1;
+  get fileID() {
+    return this.filePage.editorID;
   }
-}
+  get filePage() {
+    return this._filePage;
+  }
 
-function createEmptyConfig(): SearchConfig {
-  return {
-    hightlight: true,
-    type: parseInt((document.querySelector("[name=search-type]")! as HTMLSelectElement).value) as unknown as ByteType,
-  } as SearchConfig;
+  constructor(filepage: EditorPage) {
+    this._filePage = filepage;
+  }
+
+  // init search progress.
+  public searchInitProgress(total: number) {
+    currentProgress = -1;
+    totalProgress = total;
+    this.searchInProgress();
+  }
+
+  // update search progress
+  public searchInProgress() {
+    ++currentProgress;
+    (searchElement.querySelector(".search-progress") as HTMLElement).style.display = "block";
+    searchResultsElement.children[0].textContent = `${this.results.length} results have been found.`;
+    (searchElement.querySelector(".search-progress-inner")! as HTMLElement).style.width = `${(currentProgress / totalProgress) * 100}%`;
+    if (currentProgress == totalProgress) {
+      this.searchDoneProgress();
+    }
+  }
+
+  // done search progress
+  public searchDoneProgress() {
+    searchResultsElement.children[0].textContent = `${this.results.length} results have been found.`;
+    (searchElement.querySelector(".search-results") as HTMLElement).style.display = "block";
+    this.results.sort((a, b) => a - b);
+    this._filePage.addCustomSelection({
+      label: "Search",
+      type: CustomSelectionType.SCATTER,
+      visible: this.highlight,
+      style: "highlight-search",
+      meta: this.results,
+      length: this.toSearch.buffer.byteLength,
+    } as CustomSelection);
+
+    this.resultListSeek(0);
+    this._filePage.update();
+  }
+
+  public searchAll() {
+    if (!currentSearchFP) {
+      MessageTip.show({ text: "Please valid file page." });
+      return;
+    }
+
+    const searchRes = currentSearchFP.results;
+    let startOffset: number;
+
+    const filePage: EditorPage = currentSearchFP.filePage;
+
+    // create byteArray to search
+    this.toSearch = searchValueToBytes(
+      searchInputElement.value,
+      parseInt((document.querySelector("[name=search-type]")! as HTMLSelectElement).value) as unknown as ByteType
+    );
+    const pattern: ByteArray = new ByteArray(this.toSearch.buffer);
+    currentSearchFP.length = pattern.length;
+
+    if (currentSearchFP.length === 0) {
+      MessageTip.show({ text: "Please input text to search." });
+      return;
+    }
+
+    // clear current filepage search results
+    searchRes.splice(0, searchRes.length);
+
+    // init search section's offsets
+    const searchList: Array<number> = new Array();
+    const bytesEachWindow = 1024 * 1024 * 64; // TODO: the number may not suitable
+    const eachLength: number = bytesEachWindow + pattern.length - 1;
+    for (startOffset = 0; startOffset <= filePage.originFileSize; startOffset += bytesEachWindow) {
+      searchList.push(startOffset);
+    }
+    if (searchList.length == 0) searchList.push(0);
+    // init search progress according to searchList
+    this.searchInitProgress(searchList.length);
+    console.log(searchList);
+    // start search
+    searchList.forEach((curOffset) => {
+      if (!currentSearchFP) return;
+
+      workerPool.execute("search", [currentSearchFP.filePage.currentFile, curOffset, eachLength, this.toSearch.buffer]).then((data) => {
+        (data.results as number[]).forEach((offset: number) => searchRes.push(offset + (data.offset as number)));
+        this.searchInProgress();
+      });
+    });
+  }
+
+  public resultListSeek(offset?: number) {
+    const listChildren: HTMLCollection = searchResultsElement.getElementsByTagName("ul")[0].children;
+    const resultsLength: number = this.results.length;
+    let i: number;
+    let item: HTMLElement;
+    searchResultsElement.children[0].textContent = `${this.results.length} results have been found.`;
+    this.offsetResult = offset || this.offsetResult;
+    for (i = 0; i < listChildren.length && i + this.offsetResult < resultsLength; i++) {
+      item = listChildren.item(i) as HTMLElement;
+      item.textContent = "0x" + this.results[i + this.offsetResult].toString(16).toUpperCase().padStart(this._filePage.linePadLength, "0");
+    }
+
+    for (; i < listChildren.length; i++) {
+      item = listChildren.item(i) as HTMLElement;
+      item.textContent = "";
+    }
+  }
+
+  public onResultScroll(type: number, ratio: number, newRatio?: Function) {
+    let childrenNum = this.results.length - searchResultsElement.getElementsByTagName("ul")[0].children.length;
+    let offset: number;
+
+    if (type === ScrollBar.DRAG) {
+      offset = childrenNum * ratio;
+    } else {
+      if (type === ScrollBar.UP) {
+        offset = childrenNum * ratio - 10;
+      } else if (type === ScrollBar.DOWN) {
+        offset = childrenNum * ratio + 10;
+      }
+      if (offset! < 0) offset = 0;
+      if (offset! > childrenNum) offset = childrenNum;
+      newRatio!(offset! / childrenNum);
+    }
+    offset = Math.floor(offset!);
+
+    resultListSeek(offset);
+  }
 }
 
 function makeArrayBuffer(bytes: number[]): ArrayBuffer {
@@ -126,11 +211,11 @@ function makeArrayBuffer(bytes: number[]): ArrayBuffer {
   return buffer;
 }
 
-function searchValueToBytes(toSeach: string, config: SearchConfig): ToSearchBytes {
+function searchValueToBytes(toSeach: string, type: ByteType): ToSearchBytes {
   let asType;
   let bytesArray: number[] = [];
   let result: ToSearchBytes;
-  switch (config.type) {
+  switch (type) {
     case ByteType.hex:
       asType = toSeach
         .slice(0)
@@ -162,167 +247,49 @@ function searchValueToBytes(toSeach: string, config: SearchConfig): ToSearchByte
   }
 
   result = {
-    type: config.type,
-    origin: asType,
+    type: type,
+    originText: toSeach,
+    typeText: asType,
     buffer: makeArrayBuffer(bytesArray),
   };
   return result;
 }
 
-let currentProgress: number;
-let totalProgress: number;
-
-// init search progress.
-function searchInitProgress(total: number) {
-  currentProgress = -1;
-  totalProgress = total;
-  searchInProgress();
-}
-
-// update search progress
-function searchInProgress() {
-  if (!currentSearchFP) return;
-  ++currentProgress;
-  (searchElement.querySelector(".search-progress") as HTMLElement).style.display = "block";
-  searchResultsElement.children[0].textContent = `${currentSearchFP.results.length} results have been found.`;
-  (searchElement.querySelector(".search-progress-inner")! as HTMLElement).style.width = `${(currentProgress / totalProgress) * 100}%`;
-  if (currentProgress == totalProgress) {
-    searchDoneProgress();
-  }
-}
-
-// done search progress
-function searchDoneProgress() {
-  if (!currentSearchFP) return;
-  searchResultsElement.children[0].textContent = `${currentSearchFP.results.length} results have been found.`;
-  (searchElement.querySelector(".search-results") as HTMLElement).style.display = "block";
-  currentSearchFP.results.sort((a, b) => a - b);
-  resultListSeek(0);
-  updateHighlight();
-}
-
-function searchAll() {
-  if (!currentSearchFP) {
-    MessageTip.show({ text: "Please valid file page." });
-    return;
-  }
-  const searchRes = currentSearchFP.results;
-  let startOffset: number;
-
-  const filePage: FilePage = currentSearchFP.filePage;
-
-  // create byteArray to search
-  const toSearch = searchValueToBytes(searchInputElement.value, createEmptyConfig());
-  const pattern: ByteArray = new ByteArray(toSearch.buffer);
-  currentSearchFP.length = pattern.length;
-  if (currentSearchFP.length === 0) {
-    MessageTip.show({ text: "Please input text to search." });
-    return;
-  }
-
-  // clear current filepage search results
-  searchRes.splice(0, searchRes.length);
-
-  // init search section's offsets
-  const searchList: Array<number> = new Array();
-  const bytesEachWindow = 1024 * 1024 * 64; // TODO: the number may not suitable
-  const eachLength: number = bytesEachWindow + pattern.length - 1;
-  for (startOffset = 0; startOffset <= filePage.fileTotalBytes; startOffset += bytesEachWindow) {
-    searchList.push(startOffset);
-  }
-  if (searchList.length == 0) searchList.push(0);
-  // init search progress according to searchList
-  searchInitProgress(searchList.length);
-  console.log(searchList);
-  // start search
-  searchList.forEach((curOffset) => {
-    if (!currentSearchFP) return;
-
-    workerPool.execute("search", [currentSearchFP.filePage.currentFile, curOffset, eachLength, toSearch.buffer]).then((data) => {
-      (data.results as number[]).forEach((offset: number) => searchRes.push(offset + (data.offset as number)));
-      searchInProgress();
-    });
-  });
-}
-
-function selectFilePage(file: FilePage) {
+function selectFilePage(file: EditorPage) {
   if (!file) {
     currentSearchFP = null;
     return;
   }
-  const element: HTMLElement = searchElement.querySelector("button")!;
-  element.dataset["file"] = file === null ? "0" : file.fileID.toString();
-  currentSearchFP = searchFiles.find((sr) => sr.fileID === file.fileID)!;
+  currentSearchFP = searches.find((sr) => sr.fileID === file.editorID)!;
+  currentSearchFP.resultListSeek();
 }
 
-function initSearchResult(file: FilePage) {
-  searchFiles.push({
-    fileID: file.fileID,
-    filePage: file,
-    toSearch: "",
-    results: [],
-    offsetResult: 0,
-    length: 0,
-  });
+function initSearchResult(filePage: EditorPage) {
+  searches.push(new Search(filePage));
 }
 
-function destorySearchResult(file: FilePage) {
-  searchFiles.splice(
-    searchFiles.findIndex((sr) => sr.fileID === file.fileID),
+function destorySearchResult(file: EditorPage) {
+  searches.splice(
+    searches.findIndex((sr) => sr.fileID === file.editorID),
     1
   );
 }
 
 function resultListSeek(offset: number) {
-  if (!currentSearchFP) return;
-  const listChildren: HTMLCollection = searchResultsElement.getElementsByTagName("ul")[0].children;
-  const resultsLength: number = currentSearchFP.results.length;
-  let i: number;
-  let item: HTMLElement;
-
-  currentSearchFP.offsetResult = offset;
-  for (i = 0; i < listChildren.length && i + offset < resultsLength; i++) {
-    item = listChildren.item(i) as HTMLElement;
-    item.textContent =
-      "0x" + currentSearchFP.results[i + offset].toString(16).toUpperCase().padStart(currentSearchFP.filePage.offsetAddressMaxLength, "0");
-  }
-
-  for (; i < listChildren.length; i++) {
-    item = listChildren.item(i) as HTMLElement;
-    item.textContent = "";
-  }
+  currentSearchFP?.resultListSeek(offset);
 }
 
 function onResultScroll(type: number, ratio: number, newRatio?: Function) {
-  if (!currentSearchFP) return;
-  let childrenNum = currentSearchFP.results.length - searchResultsElement.getElementsByTagName("ul")[0].children.length;
-  let offset: number;
-
-  if (type === ScrollBar.DRAG) {
-    offset = childrenNum * ratio;
-  } else {
-    if (type === ScrollBar.UP) {
-      offset = childrenNum * ratio - 10;
-    } else if (type === ScrollBar.DOWN) {
-      offset = childrenNum * ratio + 10;
-    }
-    if (offset! < 0) offset = 0;
-    if (offset! > childrenNum) offset = childrenNum;
-    newRatio!(offset! / childrenNum);
-  }
-  offset = Math.floor(offset!);
-
-  resultListSeek(offset);
+  currentSearchFP?.onResultScroll(type, ratio, newRatio);
 }
 
 export function setupSearch() {
   document.querySelector(".sidebar")!.innerHTML += template;
 
   searchElement = document.querySelector(".search")!;
-  searchElement.querySelector("button")!.onclick = searchAll;
+  searchElement.querySelector("button")!.onclick = () => currentSearchFP?.searchAll();
   searchInputElement = searchElement.querySelector('[name="search-value"]')!;
   searchResultsElement = searchElement.querySelector(".search-results")!;
-  App.hookRegister("afterWindowSeek", updateHighlight);
   App.hookRegister("afterSwitchPage", selectFilePage);
   App.hookRegister("afterOpenFile", initSearchResult);
   App.hookRegister("beforeCloseFile", destorySearchResult);
@@ -330,12 +297,11 @@ export function setupSearch() {
 
   ul.addEventListener("click", (ev: MouseEvent) => {
     const li = ev.composedPath().find((e) => (e as HTMLElement).tagName === "LI") as HTMLElement;
-    if (!li.textContent || li.textContent.length === 0) return;
+    if (!li || !li.textContent || li.textContent.length === 0) return;
     const address = parseInt(li.textContent);
     if (isNaN(address)) return;
-    if (!currentSearchFP) return;
-    currentSearchFP.filePage.seekAddress(address);
-    currentSearchFP.filePage.setCursor(address);
+    currentSearchFP?.filePage.seekAddress(address);
+    currentSearchFP?.filePage.setCursor(address);
   });
   const virtualList: VirtualList = new VirtualList(ul!, onResultScroll);
   for (let i = 0; i < 10; i++) {

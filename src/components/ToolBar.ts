@@ -1,5 +1,6 @@
+import { MenuItemStatus, PopupMenu } from "./PopupMenu";
 import { App } from "@/app";
-import { FilePage } from "@/components/FilePage";
+import { EditorPage } from "@/components/EditorPage";
 import { SVG_openFile, SVG_closeFile, SVG_templateLib, SVG_search, SVG_help } from "./Icon";
 import { newTabButton, newTabContent, tabDestoryCurrent, activeTab } from "./Tab";
 import "../assets/css/ToolBar.less";
@@ -12,6 +13,7 @@ const template = `
   <li><i>${SVG_templateLib}</i>模板库</li>
   <li><i>${SVG_search}</i>搜索</li>
   <li><i>${SVG_help}</i>帮助</li>
+  <li class="more"><i>${SVG_help}</i>更多</li>
 </ul>
 `;
 
@@ -39,28 +41,33 @@ function help() {
   MessageTip.show({ text: "Help Window in future plans" });
 }
 
+function more() {
+  // const moreElement=document.querySelector<HTMLElement>(".toolbar .more")!;
+  // const rect=moreElement.getBoundingClientRect();
+  // PopupMenu.show([
+  //   { key: "Delete", label: "删除", handler: () => 1, status: MenuItemStatus.NORMAL }
+  // ],rect.x,rect.y+rect.height);
+  // App.currentPage?.insert(0,[0]);
+  App.currentPage?.delete(16,16);
+  App.currentPage?.update(true);
+}
+
 function addFileTab(file: File, filePath?: string) {
-  let filePage: FilePage = App.openFile(file, filePath)!;
+  let filePage: EditorPage = App.openFile(file, filePath)!;
   if (filePage) {
-    newTabButton(filePage.fileID, file.name, true);
-    newTabContent(filePage.fileID, filePage.editorElement);
-    activeTab(filePage.fileID);
+    newTabButton(filePage.editorID, file.name, true);
+    newTabContent(filePage.editorID, filePage.editorElement);
+    activeTab(filePage.editorID);
   }
 }
 
 function inputFileOnClick({ target }: Event) {
   const files: FileList = (target as HTMLInputElement).files!;
-  if (files.length == 0) {
-    console.log("Error:No files selected");
-  } else if (files.length > 1) {
-    console.log("Error:More than one file selected");
-  } else {
-    addFileTab(files[0], (target as HTMLInputElement).value);
-    (target as HTMLInputElement).value = "";
-  }
+  addFileTab(files[0], (target as HTMLInputElement).value);
+  (target as HTMLInputElement).value = "";
 }
 
-const toolbarClick: any = [openFile, closeFile, templateLib, search, help];
+const toolbarClick: any = [openFile, closeFile, templateLib, search, help, more];
 
 export function setupToolbar() {
   const toolbar = document.querySelector<HTMLElement>(".toolbar")!;

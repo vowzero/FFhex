@@ -1,4 +1,4 @@
-.no-user-select(){
+.no-user-select() {
   -o-webkit-user-select: none;
   -moz-user-select: none;
   -khtml-user-select: none;
@@ -12,11 +12,11 @@
   font-style: normal;
   font-weight: 300;
   font-display: block;
-  src: local("Source Code Pro"), local("SourceCodePro-Regular"), url("../fonts/SourceCodePro.woff")format("woff");
+  src: local("Source Code Pro"), local("SourceCodePro-Regular"), url("../fonts/SourceCodePro.woff") format("woff");
 }
 
 :root {
-  font-family: "Source Code Pro", sans-serif,"Microsoft Yahei";
+  font-family: "Source Code Pro", sans-serif, "Microsoft Yahei";
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
@@ -36,10 +36,8 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  /* place-items: center; */
   min-width: 320px;
   min-height: 100vh;
-  overscroll-behavior: none;
 }
 
 h1 {
@@ -47,12 +45,12 @@ h1 {
   line-height: 1.1;
 }
 
-ul{
+ul {
   margin: 0;
   padding: 0;
-  display:flex;
+  display: flex;
 }
-li{
+li {
   list-style: none;
 }
 
@@ -74,75 +72,72 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-.editor-container{
+#app {
+  overflow: hidden;
+}
+
+.editor-container {
   display: flex;
   width: 100vw;
   height: 100vh;
 }
-.main-area{
+.main-area {
   display: flex;
   flex-direction: column;
-  flex:4;
+  flex: 4;
 }
-.sidebar{
+.sidebar {
   flex: 1;
   overflow-y: auto;
 }
 
-.minor-sidebar{
+.minor-sidebar {
   display: flex;
   width: 384px;
   display: none;
 }
 
-
-.hex-editor{
+.hex-editor {
   display: flex;
   width: 100%;
   height: 100%;
   overflow: hidden;
 }
 
-
-
-.module-container{
+.module-container {
   width: 100%;
 }
 
-.module-container .module-title{
+.module-container .module-title {
   background: #ddd;
-  padding: .5rem 1rem;
+  padding: 0.5rem 1rem;
   .no-user-select();
 }
 
-.module-container .module-title svg{
-  width:1rem;
-  height:1rem;
-  margin: -.2rem;
+.module-container .module-title svg {
+  width: 1rem;
+  height: 1rem;
+  margin: -0.2rem;
   margin-right: 1rem;
 }
 
-.data-viewer{
-  font-size: .75rem;
+.data-viewer {
+  font-size: 0.75rem;
 }
-.grid{
+.grid {
   display: grid;
   grid-template-columns: 40% 60%;
 }
 
-.endian-select{
+.endian-select {
   display: inline-block;
   margin-left: 2rem;
 }
 
-
-
-.virtual-list-box{
+.virtual-list-box {
   overflow: auto;
 }
 
-.virtual-list-container{
+.virtual-list-container {
   overflow: hidden;
 }
-
-

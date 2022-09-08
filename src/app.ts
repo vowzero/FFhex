@@ -1,4 +1,4 @@
-import { FilePage } from "@/components/FilePage";
+import { EditorPage } from "@/components/EditorPage";
 import { MessageTip } from "./components/MessageTip";
 
 export enum ByteType {
@@ -22,10 +22,10 @@ export enum ByteType {
 }
 
 export class App {
-  static pool: FilePage[] = [];
+  static pool: EditorPage[] = [];
   static pageCount: number;
   static pageIndex: number = 1;
-  static currentPage: FilePage | null = null;
+  static currentPage: EditorPage | null = null;
 
   private static hooks: Object = {};
 
@@ -44,13 +44,13 @@ export class App {
     // );
   }
 
-  static openFile(file: File, filePath?: string): FilePage | null {
-    let filePage: FilePage;
+  static openFile(file: File, filePath?: string): EditorPage | null {
+    let filePage: EditorPage;
     if (this.isReopenFile(file, filePath)) {
       MessageTip.show({ text: "Reopen file." });
       return null;
     } else {
-      filePage = new FilePage(this.pageIndex, file, filePath);
+      filePage = new EditorPage(this.pageIndex, file, filePath);
       this.pool.push(filePage);
       this.pageCount++;
       this.pageIndex++;
@@ -60,7 +60,7 @@ export class App {
   }
 
   static closeFile(fileID: number) {
-    const index = this.pool.findIndex((file) => file.fileID == fileID)!;
+    const index = this.pool.findIndex((file) => file.editorID == fileID)!;
     this.hookCall("beforeCloseFile", this.pool[index]);
     this.pool[index].destory();
     this.pageCount--;
@@ -69,7 +69,7 @@ export class App {
   }
 
   static switchFile(fileID: number) {
-    const file = this.pool.filter((file) => file.fileID == fileID);
+    const file = this.pool.filter((file) => file.editorID == fileID);
     this.currentPage = file.length > 0 ? file[0] : null;
     this.hookCall("afterSwitchPage", this.currentPage);
   }

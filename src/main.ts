@@ -5,6 +5,7 @@ import { setupSearch } from '@/components/Search';
 import { App } from '@/app';
 import { WelcomePage } from '@/components/WelcomePage';
 import 'default-passive-events';
+import { PieceTable } from './modules/DataSource';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="editor-container">
@@ -34,3 +35,24 @@ App.hookRegister('init',()=>{
 })
 
 App.init();
+
+// let pt=new PieceTable();
+// pt.insert(0,[1,2,5,6]);
+// pt.insert(2,[3,4]);
+// pt.insert(0,[0]);
+// pt.insert(7,[7,8]);
+// pt.delete(0,9);
+
+// pt.test();
+// for(let i=0;i<9;i++){
+//   console.log(pt.index(i));
+// }
+
+// pt.slice(3,6).then(x=>console.log(x));
+
+// let a=[];
+// let slice=pt.sliceGenerator(3,6);
+// (async()=>{
+//   for await(const x of slice) a.push(x);
+//   console.log(a);
+// })();

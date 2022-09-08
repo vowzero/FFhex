@@ -40,7 +40,7 @@ const createMenuList = (menuList: MenuItem[]) => {
       itemElement.dataset["key"] = item.key;
       itemElement.onclick = (_e) => {
         item.handler();
-        PopupMenu.hidden();
+        menuElement!.classList.add("hidden");
       };
       itemElement.append(label, shortcut);
       ul.appendChild(itemElement);
@@ -62,13 +62,27 @@ export class PopupMenu {
     const ul = createMenuList(menuList);
     if (ul.children.length > 0) {
       menuElement.append(ul);
+
+      // ensure the menu is in window
+      const rect = ul.getBoundingClientRect();
+      if (rect.width + x > window.innerWidth) {
+        x = window.innerWidth - rect.width - 20;
+      }
+      if (rect.height + y > window.innerHeight) {
+        y = window.innerHeight - rect.height - 20;
+      }
+
       menuElement.style.left = `${x}px`;
       menuElement.style.top = `${y}px`;
       menuElement.classList.remove("hidden");
-    }
-  }
 
-  public static hidden() {
-    menuElement?.classList.add("hidden");
+      document.addEventListener(
+        "click",
+        () => {
+          menuElement!.classList.add("hidden");
+        },
+        { once: true, capture: true }
+      );
+    }
   }
 }

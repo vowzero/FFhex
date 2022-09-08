@@ -1,3 +1,5 @@
+@import "./Hightlight";
+
 .editor-page {
   display: flex;
   position: relative;
@@ -40,9 +42,6 @@
   }
 }
 
-
-
-
 .editor-hex-area {
   white-space: pre-wrap;
   padding-left: 3rem;
@@ -56,5 +55,10 @@
   outline: none;
 }
 
-@import "./Hightlight";
+
+.editor-hex-area,.editor-text-area{
+  & span.editing {
+    background-color: rgba(255,0,0,0.8);
+  }
+}
 

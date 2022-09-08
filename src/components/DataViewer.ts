@@ -58,10 +58,10 @@ const template = `
 let littleEndian: boolean=false;
 let dataViewerElement: HTMLElement;
 let lastOffset: number|null=null;
-let lastBuffer:ArrayBuffer|null;
+let lastBuffer:DataView|null;
 
-function updateDataViewer(_file:any,offset: number, buffer: ArrayBuffer) {
-  let bytesFormat: BytesFormat = new BytesFormat(new DataView(buffer));
+function updateDataViewer(_file:any,offset: number, buffer: DataView) {
+  let bytesFormat: BytesFormat = new BytesFormat(buffer);
   bytesFormat.offset = offset;
   bytesFormat.littleEndian = littleEndian;
 
