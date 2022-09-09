@@ -12,9 +12,11 @@ interface PieceBuffer {
   maxSize: number;
 }
 
+
+
 export class PieceTable {
-  private _size: number = 0;
-  private defaultBufferSize: number = 1024 * 64;
+  protected _size: number = 0;
+  protected defaultBufferSize: number = 1024 * 64;
   protected origin?: FileReaderIO;
   protected buffers: PieceBuffer[];
   protected nodes: PieceNode[];
@@ -229,5 +231,16 @@ export class PieceTable {
     maxSize = maxSize || this.defaultBufferSize;
     this.buffers.push({ size: 0, maxSize, data: new ArrayBuffer(maxSize) });
     return this.buffers.length - 1;
+  }
+}
+
+export class PieceTableClone extends PieceTable{
+  constructor(pt:any ){
+    super();
+    this._size=pt._size;
+    this.defaultBufferSize=pt.defaultBufferSize;
+    this.origin=new FileReaderIO(pt.origin.file);
+    this.buffers=pt.buffers
+    this.nodes=pt.nodes;
   }
 }

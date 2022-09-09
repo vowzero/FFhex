@@ -1,7 +1,7 @@
 import { MenuItemStatus, PopupMenu } from "./PopupMenu";
 import { App } from "@/app";
 import { EditorPage } from "@/components/EditorPage";
-import { SVG_openFile, SVG_closeFile, SVG_templateLib, SVG_search, SVG_help } from "./Icon";
+import { SVG_openFile, SVG_closeFile, SVG_templateLib, SVG_search, SVG_help, SVG_saveFile } from "./Icon";
 import { newTabButton, newTabContent, tabDestoryCurrent, activeTab } from "./Tab";
 import "../assets/css/ToolBar.less";
 import { MessageTip } from "./MessageTip";
@@ -9,6 +9,7 @@ import { MessageTip } from "./MessageTip";
 const template = `
 <ul>
   <li><i>${SVG_openFile}</i>打开文件</li>
+  <li><i>${SVG_saveFile}</i>保存文件</li>
   <li><i>${SVG_closeFile}</i>关闭文件</li>
   <li><i>${SVG_templateLib}</i>模板库</li>
   <li><i>${SVG_search}</i>搜索</li>
@@ -17,12 +18,16 @@ const template = `
 </ul>
 `;
 
-async function openFile() {
+function openFile() {
   document.getElementById("select-file")!.click();
   // TODO: fileHandle support save file
   // const [fileHandle] = (await window.showOpenFilePicker({ multiple: true })) as FileSystemHandle[];
   // console.log(fileHandle);
   // console.log(await fileHandle.getFile());
+}
+
+function saveFile(){
+  App.currentPage?.save();
 }
 
 function closeFile() {
@@ -67,7 +72,7 @@ function inputFileOnClick({ target }: Event) {
   (target as HTMLInputElement).value = "";
 }
 
-const toolbarClick: any = [openFile, closeFile, templateLib, search, help, more];
+const toolbarClick: any = [openFile, saveFile,closeFile, templateLib, search, help, more];
 
 export function setupToolbar() {
   const toolbar = document.querySelector<HTMLElement>(".toolbar")!;

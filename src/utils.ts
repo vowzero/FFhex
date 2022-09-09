@@ -262,3 +262,14 @@ export const readFileSlice=(file:Blob,offset: number, length: number): Promise<F
   });
 }
 
+export const downloadFile=(file:Blob,filename:string)=>{
+  const a=document.createElement('a');
+  const url=URL.createObjectURL(file);
+  document.body.append(a);
+  a.href=url;
+  a.download=filename;
+  a.click();
+  a.remove();
+  URL.createObjectURL(file);
+}
+

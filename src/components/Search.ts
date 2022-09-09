@@ -62,21 +62,21 @@ const searches: Search[] = [];
 let currentSearchFP: Search | null;
 
 class Search {
-  private _filePage: EditorPage;
+  private _editorPage: EditorPage;
   private toSearch!: ToSearchBytes;
   private results: number[] = [];
   private offsetResult: number = 0;
   private highlight: boolean = true;
   private length: number = -1;
-  get fileID() {
-    return this.filePage.editorID;
+  get editorID() {
+    return this.editorPage.editorID;
   }
-  get filePage() {
-    return this._filePage;
+  get editorPage() {
+    return this._editorPage;
   }
 
-  constructor(filepage: EditorPage) {
-    this._filePage = filepage;
+  constructor(editorPage: EditorPage) {
+    this._editorPage = editorPage;
   }
 
   // init search progress.
@@ -102,7 +102,7 @@ class Search {
     searchResultsElement.children[0].textContent = `${this.results.length} results have been found.`;
     (searchElement.querySelector(".search-results") as HTMLElement).style.display = "block";
     this.results.sort((a, b) => a - b);
-    this._filePage.addCustomSelection({
+    this._editorPage.addCustomSelection({
       label: "Search",
       type: CustomSelectionType.SCATTER,
       visible: this.highlight,
@@ -112,7 +112,7 @@ class Search {
     } as CustomSelection);
 
     this.resultListSeek(0);
-    this._filePage.update();
+    this._editorPage.update();
   }
 
   public searchAll() {
@@ -124,7 +124,7 @@ class Search {
     const searchRes = currentSearchFP.results;
     let startOffset: number;
 
-    const filePage: EditorPage = currentSearchFP.filePage;
+    const editorPage: EditorPage = currentSearchFP.editorPage;
 
     // create byteArray to search
     this.toSearch = searchValueToBytes(
@@ -139,14 +139,14 @@ class Search {
       return;
     }
 
-    // clear current filepage search results
+    // clear current editorPage search results
     searchRes.splice(0, searchRes.length);
 
     // init search section's offsets
     const searchList: Array<number> = new Array();
     const bytesEachWindow = 1024 * 1024 * 64; // TODO: the number may not suitable
     const eachLength: number = bytesEachWindow + pattern.length - 1;
-    for (startOffset = 0; startOffset <= filePage.originFileSize; startOffset += bytesEachWindow) {
+    for (startOffset = 0; startOffset <= editorPage.originFileSize; startOffset += bytesEachWindow) {
       searchList.push(startOffset);
     }
     if (searchList.length == 0) searchList.push(0);
@@ -157,7 +157,7 @@ class Search {
     searchList.forEach((curOffset) => {
       if (!currentSearchFP) return;
 
-      workerPool.execute("search", [currentSearchFP.filePage.currentFile, curOffset, eachLength, this.toSearch.buffer]).then((data) => {
+      workerPool.execute("search", [currentSearchFP.editorPage.dataSource, curOffset, eachLength, this.toSearch.buffer]).then((data) => {
         (data.results as number[]).forEach((offset: number) => searchRes.push(offset + (data.offset as number)));
         this.searchInProgress();
       });
@@ -173,7 +173,7 @@ class Search {
     this.offsetResult = offset || this.offsetResult;
     for (i = 0; i < listChildren.length && i + this.offsetResult < resultsLength; i++) {
       item = listChildren.item(i) as HTMLElement;
-      item.textContent = "0x" + this.results[i + this.offsetResult].toString(16).toUpperCase().padStart(this._filePage.linePadLength, "0");
+      item.textContent = "0x" + this.results[i + this.offsetResult].toString(16).toUpperCase().padStart(this._editorPage.linePadLength, "0");
     }
 
     for (; i < listChildren.length; i++) {
@@ -260,17 +260,17 @@ function selectFilePage(file: EditorPage) {
     currentSearchFP = null;
     return;
   }
-  currentSearchFP = searches.find((sr) => sr.fileID === file.editorID)!;
+  currentSearchFP = searches.find((sr) => sr.editorID === file.editorID)!;
   currentSearchFP.resultListSeek();
 }
 
-function initSearchResult(filePage: EditorPage) {
-  searches.push(new Search(filePage));
+function initSearchResult(editorPage: EditorPage) {
+  searches.push(new Search(editorPage));
 }
 
 function destorySearchResult(file: EditorPage) {
   searches.splice(
-    searches.findIndex((sr) => sr.fileID === file.editorID),
+    searches.findIndex((sr) => sr.editorID === file.editorID),
     1
   );
 }
@@ -300,8 +300,8 @@ export function setupSearch() {
     if (!li || !li.textContent || li.textContent.length === 0) return;
     const address = parseInt(li.textContent);
     if (isNaN(address)) return;
-    currentSearchFP?.filePage.seekAddress(address);
-    currentSearchFP?.filePage.setCursor(address);
+    currentSearchFP?.editorPage.seekAddress(address);
+    currentSearchFP?.editorPage.setCursor(address);
   });
   const virtualList: VirtualList = new VirtualList(ul!, onResultScroll);
   for (let i = 0; i < 10; i++) {

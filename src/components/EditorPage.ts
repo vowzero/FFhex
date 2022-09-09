@@ -1,3 +1,4 @@
+import { downloadFile } from "./../utils";
 import { FileReaderIO, FileReadResult } from "../modules/IO";
 import { App } from "@/app";
 import { ScrollBar } from "@/components/ScrollBar";
@@ -53,7 +54,7 @@ export class EditorPage {
   private originFile!: File; // Which file is opened
   private originFilePath?: string; // input file path
   public originFileSize: number = 0; // File bytes size
-  private dataSource: PieceTable;
+  public dataSource: PieceTable;
   // ui elements
   private uiPage!: HTMLDivElement; // The top layer container element
   private uiLine!: HTMLDivElement; // Left address line number
@@ -164,8 +165,8 @@ export class EditorPage {
     });
   }
 
-  public storeSingleByteEdit(){
-    if(this.singleByteEditMode.enabled){
+  public storeSingleByteEdit() {
+    if (this.singleByteEditMode.enabled) {
       this.singleByteEditMode.enabled = false;
       if (this.singleByteEditMode.address !== this.dataSource.size) {
         this.dataSource.delete(this.singleByteEditMode.address, 1);
@@ -297,7 +298,12 @@ export class EditorPage {
     this._updateEditorPage();
   }
 
-  public save() {}
+  public save() {
+    console.log("saving");
+    this.dataSource.slice(0, this.dataSource.size).then((frr) => {
+      downloadFile(new Blob([frr.result],{type:"application/octet-stream"}), this.originFile.name);
+    });
+  }
 
   public destory() {
     if (this.dirty) {
